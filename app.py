@@ -18,8 +18,8 @@ st.set_page_config(
 # --- Carregamento e Pré-processamento dos Dados ---
 @st.cache_data
 def load_data():
-    # URL do arquivo CSV de carros no GitHub
-    url = 'https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/auto-mpg.csv'
+    # URL do arquivo CSV de carros no GitHub (corrigido para uma URL estável)
+    url = 'https://raw.githubusercontent.com/luccasfsilva/projetopy/main/auto-mpg.csv'
     df = pd.read_csv(url, na_values=['?'])  # Tratar '?' como NaN
     
     # Renomear colunas para facilitar o uso
