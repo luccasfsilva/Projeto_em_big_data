@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 
 # Para rodar este app, você precisa ter as bibliotecas instaladas.
 # Instale-as no seu ambiente virtual com os seguintes comandos:
