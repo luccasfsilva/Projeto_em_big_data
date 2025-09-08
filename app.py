@@ -4,6 +4,14 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Para rodar este app, você precisa ter as bibliotecas instaladas.
+# Instale-as no seu ambiente virtual com os seguintes comandos:
+# pip install streamlit
+# pip install pandas
+# pip install install "matplotlib<3.7"
+# pip install seaborn
+# pip install "plotly<5.10"
+
 # --- Configuração da Página ---
 st.set_page_config(
     page_title="Dashboard de Análise de Veículos",
