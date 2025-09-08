@@ -23,7 +23,7 @@ st.set_page_config(
 @st.cache_data
 def load_data():
     # URL to the raw CSV file on GitHub (from the Colab notebook)
-    url = 'https://raw.githubusercontent.com/albuquerque22/Colab-Notebooks/main/Automobile.csv'
+    url = 'https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/imdb_movies.csv'
     df = pd.read_csv(url)
 
     # Clean up column names
