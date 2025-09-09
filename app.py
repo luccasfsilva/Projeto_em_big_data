@@ -7,7 +7,6 @@ import plotly.express as px
 # pip install streamlit
 # pip install pandas
 # pip install plotly
-# pip install pycountry
 
 # --- Configuração da Página ---
 st.set_page_config(
