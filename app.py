@@ -8,7 +8,7 @@ st.set_page_config(page_title="Dashboard de Filmes", page_icon="🎬", layout="w
 
 # --- Carregar os dados ---
 # ⚠️ Troque pelo caminho real ou link raw do GitHub com seu CSV
-df_limpo = pd.read_csv("https://raw.githubusercontent.com/seu_usuario/seu_repo/main/filmes.csv")
+df_limpo = pd.read_csv("https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/imdb_movies.csv")
 
 # Garantir tipos corretos
 df_limpo["revenue"] = pd.to_numeric(df_limpo["revenue"], errors="coerce")
