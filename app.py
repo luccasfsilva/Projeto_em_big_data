@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import pycountry
 
 # Para rodar este app, você precisa ter as bibliotecas instaladas.
 # Instale-as no seu ambiente virtual com os seguintes comandos:
@@ -21,7 +20,7 @@ st.set_page_config(
 @st.cache_data
 def load_data():
     # URL para o arquivo CSV de filmes no GitHub
-    url = 'https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/imdb_movies.csv'
+    url = 'https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv'
     df = pd.read_csv(url)
     
     # Renomear colunas para facilitar o uso
