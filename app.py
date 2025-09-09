@@ -11,8 +11,17 @@ st.set_page_config(
 )
 
 # --- Carregamento dos dados ---
-# Substitua pelo link do seu CSV no GitHub ou outro host
-df = pd.read_csv("https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/imdb_movies.csv")
+# Substitua pelo link do CSV hospedado no GitHub
+df = pd.read_csv("https://raw.githubusercontent.com/seu_usuario/seu_repo/main/filmes.csv")
+
+# Garantir que score seja numérico
+df["score"] = pd.to_numeric(df["score"], errors="coerce")
+
+# Converter data para datetime
+df["date_x"] = pd.to_datetime(df["date_x"], errors="coerce")
+
+# Criar coluna de ano
+df["year"] = df["date_x"].dt.year
 
 # --- Barra Lateral (Filtro por Gênero) ---
 st.sidebar.header("🎭 Filtro")
@@ -41,10 +50,10 @@ with col1:
     if not df_filtrado.empty:
         graf1 = px.histogram(
             df_filtrado,
-            x="rating",
+            x="score",
             nbins=20,
-            title="Distribuição das Avaliações",
-            labels={"rating": "Nota"}
+            title="Distribuição das Notas",
+            labels={"score": "Nota"}
         )
         st.plotly_chart(graf1, use_container_width=True)
     else:
@@ -66,12 +75,13 @@ col3, col4 = st.columns(2)
 
 with col3:
     if not df_filtrado.empty:
+        media_por_genero = df_filtrado.groupby("genre")["score"].mean().reset_index()
         graf3 = px.bar(
-            df_filtrado.groupby("genre")["rating"].mean().reset_index(),
+            media_por_genero,
             x="genre",
-            y="rating",
-            title="Média de Avaliações por Gênero",
-            labels={"rating": "Média das Notas", "genre": "Gênero"}
+            y="score",
+            title="Média das Notas por Gênero",
+            labels={"score": "Média das Notas", "genre": "Gênero"}
         )
         st.plotly_chart(graf3, use_container_width=True)
     else:
@@ -82,9 +92,9 @@ with col4:
         graf4 = px.box(
             df_filtrado,
             x="genre",
-            y="rating",
+            y="score",
             title="Distribuição das Notas por Gênero",
-            labels={"genre": "Gênero", "rating": "Nota"}
+            labels={"genre": "Gênero", "score": "Nota"}
         )
         st.plotly_chart(graf4, use_container_width=True)
     else:
