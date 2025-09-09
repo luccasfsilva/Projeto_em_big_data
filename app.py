@@ -5,105 +5,92 @@ import plotly.express as px
 
 # --- Configuração da Página ---
 st.set_page_config(
-    page_title="Dashboard Dinâmico do Projeto",
-    page_icon="📊",
+    page_title="Dashboard de Filmes",
+    page_icon="🎬",
     layout="wide",
 )
 
 # --- Carregamento dos dados ---
-# Substitua o caminho abaixo pelo dataset do seu projeto
-# Exemplo: um CSV exportado do seu Colab
+# Substitua pelo link do seu CSV no GitHub ou outro host
 df = pd.read_csv("https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/imdb_movies.csv")
 
-# --- Barra Lateral (Filtros) ---
-st.sidebar.header("🔍 Filtros")
-
-# Ajuste os filtros de acordo com as colunas que você tiver no dataset
-colunas = df.columns.tolist()
-
-# Exemplo de filtros:
-if "ano" in colunas:
-    anos_disponiveis = sorted(df['ano'].dropna().unique())
-    anos_selecionados = st.sidebar.multiselect("Ano", anos_disponiveis, default=anos_disponiveis)
-else:
-    anos_selecionados = df.index
-
-if "categoria" in colunas:
-    categorias_disp = sorted(df['categoria'].dropna().unique())
-    categorias_sel = st.sidebar.multiselect("Categoria", categorias_disp, default=categorias_disp)
-else:
-    categorias_sel = df.index
+# --- Barra Lateral (Filtro por Gênero) ---
+st.sidebar.header("🎭 Filtro")
+generos_disponiveis = sorted(df['genre'].dropna().unique())
+generos_selecionados = st.sidebar.multiselect(
+    "Selecione o(s) gênero(s):",
+    generos_disponiveis,
+    default=generos_disponiveis
+)
 
 # --- Filtragem do DataFrame ---
-df_filtrado = df.copy()
+df_filtrado = df[df['genre'].isin(generos_selecionados)]
 
-if "ano" in colunas:
-    df_filtrado = df_filtrado[df_filtrado["ano"].isin(anos_selecionados)]
-
-if "categoria" in colunas:
-    df_filtrado = df_filtrado[df_filtrado["categoria"].isin(categorias_sel)]
-
-# --- Conteúdo Principal ---
-st.title("📊 Dashboard Dinâmico do Projeto")
-st.markdown("Explore os dados com base nos filtros à esquerda.")
-
-# --- Métricas Principais ---
-st.subheader("Métricas gerais")
-
-if not df_filtrado.empty and "valor" in colunas:
-    media_valor = df_filtrado["valor"].mean()
-    max_valor = df_filtrado["valor"].max()
-    min_valor = df_filtrado["valor"].min()
-    total_registros = df_filtrado.shape[0]
-else:
-    media_valor, max_valor, min_valor, total_registros = 0, 0, 0, 0
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Média", f"{media_valor:,.2f}")
-col2.metric("Máximo", f"{max_valor:,.2f}")
-col3.metric("Mínimo", f"{min_valor:,.2f}")
-col4.metric("Total Registros", f"{total_registros:,}")
+# --- Título ---
+st.title("🎬 Dashboard de Filmes")
+st.markdown("Explore os filmes com base nos gêneros selecionados.")
 
 st.markdown("---")
 
 # --- Gráficos ---
-st.subheader("Gráficos")
+st.subheader("📊 Gráficos")
 
-col_graf1, col_graf2 = st.columns(2)
+col1, col2 = st.columns(2)
 
-with col_graf1:
-    if not df_filtrado.empty and "categoria" in colunas and "valor" in colunas:
-        graf1 = px.bar(df_filtrado, x="categoria", y="valor",
-                       title="Valores por Categoria", color="categoria")
+with col1:
+    if not df_filtrado.empty:
+        graf1 = px.histogram(
+            df_filtrado,
+            x="rating",
+            nbins=20,
+            title="Distribuição das Avaliações",
+            labels={"rating": "Nota"}
+        )
         st.plotly_chart(graf1, use_container_width=True)
     else:
-        st.warning("Adicione colunas 'categoria' e 'valor' para este gráfico.")
+        st.warning("Nenhum dado para exibir neste gráfico.")
 
-with col_graf2:
-    if not df_filtrado.empty and "valor" in colunas:
-        graf2 = px.histogram(df_filtrado, x="valor", nbins=30,
-                             title="Distribuição dos Valores")
+with col2:
+    if not df_filtrado.empty:
+        graf2 = px.histogram(
+            df_filtrado,
+            x="year",
+            title="Quantidade de Filmes por Ano",
+            labels={"year": "Ano"}
+        )
         st.plotly_chart(graf2, use_container_width=True)
     else:
-        st.warning("Adicione coluna 'valor' para este gráfico.")
+        st.warning("Nenhum dado para exibir neste gráfico.")
 
-col_graf3, col_graf4 = st.columns(2)
+col3, col4 = st.columns(2)
 
-with col_graf3:
-    if not df_filtrado.empty and "tipo" in colunas:
-        graf3 = px.pie(df_filtrado, names="tipo", title="Proporção por Tipo", hole=0.5)
+with col3:
+    if not df_filtrado.empty:
+        graf3 = px.bar(
+            df_filtrado.groupby("genre")["rating"].mean().reset_index(),
+            x="genre",
+            y="rating",
+            title="Média de Avaliações por Gênero",
+            labels={"rating": "Média das Notas", "genre": "Gênero"}
+        )
         st.plotly_chart(graf3, use_container_width=True)
     else:
-        st.warning("Adicione coluna 'tipo' para este gráfico.")
+        st.warning("Nenhum dado para exibir neste gráfico.")
 
-with col_graf4:
-    if not df_filtrado.empty and "pais" in colunas and "valor" in colunas:
-        graf4 = px.choropleth(df_filtrado, locations="pais", color="valor",
-                              color_continuous_scale="rdylgn",
-                              title="Valores médios por país")
+with col4:
+    if not df_filtrado.empty:
+        graf4 = px.box(
+            df_filtrado,
+            x="genre",
+            y="rating",
+            title="Distribuição das Notas por Gênero",
+            labels={"genre": "Gênero", "rating": "Nota"}
+        )
         st.plotly_chart(graf4, use_container_width=True)
     else:
-        st.warning("Adicione colunas 'pais' e 'valor' para este gráfico.")
+        st.warning("Nenhum dado para exibir neste gráfico.")
+
+st.markdown("---")
 
 # --- Tabela de Dados ---
 st.subheader("📋 Dados Detalhados")
