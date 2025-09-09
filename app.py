@@ -1,144 +1,152 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Dashboard de Filmes", page_icon="🎬", layout="wide")
+# Para rodar este app, você precisa ter as bibliotecas instaladas.
+# Instale-as no seu ambiente virtual com os seguintes comandos:
+# pip install streamlit
+# pip install pandas
+# pip install plotly
 
-# --- tentativa de importar pycountry (corrige erro na linha 5 caso não esteja instalado) ---
-try:
-    import pycountry
-    HAS_PYCOUNTRY = True
-except Exception:
-    pycountry = None
-    HAS_PYCOUNTRY = False
+# --- Configuração da Página ---
+st.set_page_config(
+    page_title="Dashboard de Análise de Filmes",
+    page_icon="🎬",
+    layout="wide",
+)
 
-# --- Carregar os dados ---
-# Use a URL raw correta do GitHub (ajuste se o arquivo estiver em outra pasta)
-CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
+# --- Carregamento e Pré-processamento dos Dados ---
+@st.cache_data
+def load_data():
+    # URL para o arquivo CSV de filmes no GitHub
+    url = 'https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv'
+    df = pd.read_csv(url)
+    
+    # Renomear colunas para facilitar o uso
+    df.columns = df.columns.str.lower().str.replace(' ', '_').str.replace('-', '_')
 
-try:
-    df_limpo = pd.read_csv(CSV_URL)
-except Exception as e:
-    st.error(f"Erro ao carregar o arquivo CSV.\nVerifique a URL ou se o arquivo existe.\nDetalhe: {e}")
-    st.stop()
+    # Tratar valores ausentes
+    df = df.dropna(subset=['genre', 'director', 'year', 'avg_vote', 'country', 'votes'])
 
-# Garantir tipos corretos e tratar NaNs
-df_limpo["revenue"] = pd.to_numeric(df_limpo.get("revenue"), errors="coerce").fillna(0)
-df_limpo["score"] = pd.to_numeric(df_limpo.get("score"), errors="coerce")
+    # Converter colunas para o tipo numérico adequado
+    df['avg_vote'] = pd.to_numeric(df['avg_vote'], errors='coerce')
+    df['votes'] = pd.to_numeric(df['votes'], errors='coerce')
 
-# --- KPIs ---
-st.title("🎬 Dashboard de Filmes")
+    # Filtrar dados inválidos
+    df = df[df['year'] > 1900]
 
-if not df_limpo.empty:
-    receita_total = df_limpo["revenue"].sum()
-    receita_media = df_limpo["revenue"].mean()
-    nota_media = df_limpo["score"].mean(skipna=True)
-    total_filmes = df_limpo.shape[0]
+    return df
+
+# Carregar os dados
+df = load_data()
+
+# --- Barra Lateral (Filtros) ---
+st.sidebar.header("🔍 Filtros")
+
+# Filtro por Gênero
+generos_disponiveis = sorted(df['genre'].unique())
+generos_selecionados = st.sidebar.multiselect("Gênero", generos_disponiveis, default=generos_disponiveis)
+
+# Filtro por Diretor
+diretores_disponiveis = sorted(df['director'].unique())
+diretores_selecionados = st.sidebar.multiselect("Diretor", diretores_disponiveis, default=diretores_disponiveis[:10])
+
+# Filtro por Ano
+anos_disponiveis = sorted(df['year'].unique())
+anos_selecionados = st.sidebar.multiselect("Ano", anos_disponiveis, default=anos_disponiveis)
+
+# --- Filtragem do DataFrame ---
+df_filtrado = df[
+    (df['genre'].isin(generos_selecionados)) &
+    (df['director'].isin(diretores_selecionados)) &
+    (df['year'].isin(anos_selecionados))
+]
+
+# --- Conteúdo Principal ---
+st.title("🎬 Dashboard de Análise de Filmes IMDb")
+st.markdown("Explore os dados de filmes. Use os filtros à esquerda para refinar sua análise.")
+
+# --- Métricas Principais (KPIs) ---
+st.subheader("Métricas Gerais")
+
+if not df_filtrado.empty:
+    media_avaliacao = df_filtrado['avg_vote'].mean()
+    media_votos = df_filtrado['votes'].mean()
+    total_filmes = df_filtrado.shape[0]
+    genero_mais_comum = df_filtrado['genre'].mode()[0]
 else:
-    receita_total = receita_media = nota_media = total_filmes = 0
+    media_avaliacao, media_votos, total_filmes, genero_mais_comum = 0, 0, 0, "Nenhum"
 
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Receita Total", f"${receita_total:,.0f}")
-col2.metric("Receita Média", f"${receita_media:,.0f}")
-col3.metric("Nota Média", f"{nota_media:.2f}" if pd.notna(nota_media) else "—")
-col4.metric("Total de Filmes", f"{total_filmes:,}")
+col1.metric("Média de Avaliação", f"{media_avaliacao:.2f}")
+col2.metric("Média de Votos", f"{media_votos:,.0f}")
+col3.metric("Total de Filmes", f"{total_filmes:,}")
+col4.metric("Gênero Mais Comum", genero_mais_comum)
 
 st.markdown("---")
 
-# --- Gráficos ---
-st.subheader("📊 Análises Visuais")
+# --- Análises Visuais com Plotly ---
+st.subheader("Gráficos")
 
-col_g1, col_g2 = st.columns(2)
+if not df_filtrado.empty:
+    col_graf1, col_graf2 = st.columns(2)
 
-with col_g1:
-    top_n = 10
-    df_top_revenue = df_limpo.sort_values(by="revenue", ascending=False).head(top_n)
-    graf1 = px.bar(
-        df_top_revenue,
-        x="names",
-        y="revenue",
-        title=f"Top {top_n} Filmes por Receita",
-        labels={"names": "Filme", "revenue": "Receita"}
-    )
-    st.plotly_chart(graf1, use_container_width=True)
+    with col_graf1:
+        # Gráfico: Top 10 Filmes por Avaliação
+        top_filmes = df_filtrado.sort_values('avg_vote', ascending=False).head(10)
+        fig1 = px.bar(top_filmes, 
+                      x='avg_vote', 
+                      y='title',
+                      orientation='h',
+                      title='Top 10 Filmes por Avaliação',
+                      labels={'avg_vote': 'Avaliação Média', 'title': ''})
+        fig1.update_layout(title_x=0.1, yaxis={'categoryorder':'total ascending'})
+        st.plotly_chart(fig1, use_container_width=True)
 
-with col_g2:
-    graf2 = px.histogram(
-        df_limpo,
-        x="score",
-        nbins=20,
-        title="Distribuição das Notas dos Filmes",
-        labels={"score": "Nota", "count": "Frequência"}
-    )
-    st.plotly_chart(graf2, use_container_width=True)
-
-col_g3, col_g4 = st.columns(2)
-
-with col_g3:
-    contagem_idiomas = df_limpo["orig_lang"].value_counts().head(10).reset_index()
-    contagem_idiomas.columns = ["Idioma Original", "Número de Filmes"]
-    graf3 = px.pie(
-        contagem_idiomas,
-        values="Número de Filmes",
-        names="Idioma Original",
-        title="Top 10 Idiomas Originais",
-        hole=0.3
-    )
-    st.plotly_chart(graf3, use_container_width=True)
-
-with col_g4:
-    # Receita total por país
-    revenue_country = df_limpo.groupby("country")["revenue"].sum().reset_index()
-    revenue_country.columns = ["country_raw", "Total Revenue"]
-
-    # Detecta se 'country_raw' já está em ISO3
-    sample_lengths = revenue_country["country_raw"].dropna().astype(str).apply(len)
-    is_mostly_iso3 = False
-    if not sample_lengths.empty:
-        is_mostly_iso3 = (sample_lengths.median() == 3)
-
-    if is_mostly_iso3:
-        revenue_country["country_iso3"] = revenue_country["country_raw"].astype(str)
-    else:
-        # tenta converter ISO2 -> ISO3 se pycountry estiver disponível
-        if HAS_PYCOUNTRY:
-            def iso2_to_iso3(iso2):
-                try:
-                    if not isinstance(iso2, str):
-                        return None
-                    iso2 = iso2.strip()
-                    if len(iso2) == 3:  # talvez já seja ISO3
-                        return iso2.upper()
-                    return pycountry.countries.get(alpha_2=iso2.upper()).alpha_3
-                except Exception:
-                    return None
-            revenue_country["country_iso3"] = revenue_country["country_raw"].apply(iso2_to_iso3)
-        else:
-            # sem pycountry e sem ISO3 -> não conseguimos criar o mapa
-            revenue_country["country_iso3"] = None
-
-    revenue_country = revenue_country.dropna(subset=["country_iso3"])
-
-    if revenue_country.empty:
-        st.warning(
-            "Não foi possível gerar o mapa de receita por país.\n"
-            "- Se sua coluna 'country' contém códigos ISO2, instale o pacote 'pycountry' (adicione em requirements.txt) ou\n"
-            "- forneça códigos ISO-3 na coluna 'country'."
+    with col_graf2:
+        # Gráfico: Distribuição das Avaliações
+        fig2 = px.histogram(
+            df_filtrado, 
+            x='avg_vote', 
+            nbins=20,
+            title="Distribuição das Avaliações",
+            labels={'avg_vote': 'Faixa de Avaliação', 'count': 'Contagem'}
         )
-    else:
-        graf4 = px.choropleth(
-            revenue_country,
-            locations="country_iso3",
-            color="Total Revenue",
-            color_continuous_scale="Plasma",
-            title="Receita Total por País",
-            labels={"Total Revenue": "Receita Total", "country_iso3": "País"}
+        fig2.update_layout(title_x=0.1)
+        st.plotly_chart(fig2, use_container_width=True)
+
+    col_graf3, col_graf4 = st.columns(2)
+
+    with col_graf3:
+        # Gráfico: Avaliação vs. Votos
+        fig3 = px.scatter(df_filtrado, 
+                          x='votes', 
+                          y='avg_vote', 
+                          color='genre',
+                          hover_data=['title', 'director'],
+                          title='Avaliação vs. Votos por Gênero',
+                          labels={'votes': 'Total de Votos', 'avg_vote': 'Avaliação Média'})
+        fig3.update_layout(title_x=0.1)
+        st.plotly_chart(fig3, use_container_width=True)
+
+    with col_graf4:
+        # Gráfico: Média de Avaliação por Gênero (top 10)
+        genre_avg_rating = df_filtrado.groupby('genre')['avg_vote'].mean().sort_values(ascending=False).reset_index()
+        fig4 = px.bar(
+            genre_avg_rating.head(10),
+            x='avg_vote',
+            y='genre',
+            orientation='h',
+            title='Média de Avaliação por Gênero (Top 10)',
+            labels={'genre': 'Gênero', 'avg_vote': 'Avaliação Média'}
         )
-        st.plotly_chart(graf4, use_container_width=True)
+        fig4.update_layout(title_x=0.1)
+        st.plotly_chart(fig4, use_container_width=True)
+else:
+    st.warning("Nenhum dado para exibir com os filtros selecionados.")
 
 st.markdown("---")
 
-# --- Tabela Completa ---
-st.subheader("📋 Dados dos Filmes")
-st.dataframe(df_limpo)
+# --- Tabela de Dados Detalhados ---
+st.subheader("Dados Detalhados")
+st.dataframe(df_filtrado)
