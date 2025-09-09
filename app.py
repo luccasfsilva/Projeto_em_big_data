@@ -13,7 +13,7 @@ st.set_page_config(
 # --- Carregamento dos dados ---
 # Substitua o caminho abaixo pelo dataset do seu projeto
 # Exemplo: um CSV exportado do seu Colab
-df = pd.read_csv("seus_dados.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/imdb_movies.csv")
 
 # --- Barra Lateral (Filtros) ---
 st.sidebar.header("🔍 Filtros")
