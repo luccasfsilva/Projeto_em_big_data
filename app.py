@@ -1,160 +1,105 @@
+# app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pycountry
 
-# Para rodar este app, você precisa ter as bibliotecas instaladas.
-# Instale-as no seu ambiente virtual com os seguintes comandos:
-# pip install streamlit
-# pip install pandas
-# pip install install "matplotlib<3.7"
-# pip install seaborn
-# pip install "plotly<5.10"
+st.set_page_config(page_title="Dashboard de Filmes", page_icon="🎬", layout="wide")
 
-# --- Configuração da Página ---
-st.set_page_config(
-    page_title="Dashboard de Análise de Veículos",
-    page_icon="🚙",
-    layout="wide",
-)
+# --- Carregar os dados ---
+# ⚠️ Troque pelo caminho real ou link raw do GitHub com seu CSV
+df_limpo = pd.read_csv("https://raw.githubusercontent.com/luccasfsilva/projetopy/refs/heads/main/imdb_movies.csv")
 
-# --- Carregamento e Pré-processamento dos Dados ---
-@st.cache_data
-def load_data():
-    # URL to the raw CSV file on GitHub (from the Colab notebook)
-    url = 'https://raw.githubusercontent.com/albuquerque22/Colab-Notebooks/main/Automobile.csv'
-    df = pd.read_csv(url)
+# Garantir tipos corretos
+df_limpo["revenue"] = pd.to_numeric(df_limpo["revenue"], errors="coerce")
+df_limpo["score"] = pd.to_numeric(df_limpo["score"], errors="coerce")
 
-    # Clean up column names
-    df.columns = df.columns.str.replace('.', '_')
-    df.columns = df.columns.str.replace('-', '_')
-    df.columns = df.columns.str.lower()
+# --- KPIs ---
+st.title("🎬 Dashboard de Filmes")
 
-    # Drop columns not needed for this analysis
-    df = df.drop(columns=['unnamed_0', 'normalized_losses'])
-
-    # Convert object columns to numeric where appropriate
-    for col in ['bore', 'stroke', 'horsepower', 'peak_rpm', 'price']:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-
-    # Drop rows with any NaN values for a cleaner dataset
-    df = df.dropna()
-
-    return df
-
-# Load the data
-df = load_data()
-
-# --- Barra Lateral (Filtros) ---
-st.sidebar.header("🔍 Filtros")
-
-# Filtro por Fabricante
-fabricantes_disponiveis = sorted(df['make'].unique())
-fabricantes_selecionados = st.sidebar.multiselect("Fabricante", fabricantes_disponiveis, default=fabricantes_disponiveis)
-
-# Filtro por Tipo de Combustível
-tipos_combustivel_disponiveis = sorted(df['fuel_type'].unique())
-tipos_combustivel_selecionados = st.sidebar.multiselect("Tipo de Combustível", tipos_combustivel_disponiveis, default=tipos_combustivel_disponiveis)
-
-# Filtro por Estilo de Carroceria
-estilos_carroceria_disponiveis = sorted(df['body_style'].unique())
-estilos_carroceria_selecionados = st.sidebar.multiselect("Estilo de Carroceria", estilos_carroceria_disponiveis, default=estilos_carroceria_disponiveis)
-
-# --- Filtragem do DataFrame ---
-df_filtrado = df[
-    (df['make'].isin(fabricantes_selecionados)) &
-    (df['fuel_type'].isin(tipos_combustivel_selecionados)) &
-    (df['body_style'].isin(estilos_carroceria_selecionados))
-]
-
-# --- Conteúdo Principal ---
-st.title("🚙 Dashboard de Análise de Veículos")
-st.markdown("Explore os dados de veículos. Use os filtros à esquerda para refinar sua análise.")
-
-# --- Métricas Principais (KPIs) ---
-st.subheader("Métricas Gerais")
-
-if not df_filtrado.empty:
-    preco_medio = df_filtrado['price'].mean()
-    preco_maximo = df_filtrado['price'].max()
-    media_hp = df_filtrado['horsepower'].mean()
-    total_registros = df_filtrado.shape[0]
+if not df_limpo.empty:
+    receita_total = df_limpo["revenue"].sum()
+    receita_media = df_limpo["revenue"].mean()
+    nota_media = df_limpo["score"].mean()
+    total_filmes = df_limpo.shape[0]
 else:
-    preco_medio, preco_maximo, media_hp, total_registros = 0, 0, 0, 0
+    receita_total, receita_media, nota_media, total_filmes = 0, 0, 0, 0
 
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Preço médio (USD)", f"${preco_medio:,.0f}")
-col2.metric("Preço máximo (USD)", f"${preco_maximo:,.0f}")
-col3.metric("Média de Cavalos de Potência", f"{media_hp:,.0f} HP")
-col4.metric("Total de registros", f"{total_registros:,}")
+col1.metric("Receita Total", f"${receita_total:,.0f}")
+col2.metric("Receita Média", f"${receita_media:,.0f}")
+col3.metric("Nota Média", f"{nota_media:.2f}")
+col4.metric("Total de Filmes", f"{total_filmes:,}")
 
 st.markdown("---")
 
-# --- Análises Visuais com Plotly ---
-st.subheader("Gráficos")
+# --- Gráficos ---
+st.subheader("📊 Análises Visuais")
 
-if not df_filtrado.empty:
-    col_graf1, col_graf2 = st.columns(2)
+col_g1, col_g2 = st.columns(2)
 
-    with col_graf1:
-        # Gráfico: MPG na Cidade por Fabricante (top 10)
-        avg_city_mpg = df_filtrado.groupby('make')['city_mpg'].mean().nlargest(10).sort_values(ascending=True).reset_index()
-        fig1 = px.bar(avg_city_mpg, 
-                      x='city_mpg', 
-                      y='make', 
-                      orientation='h',
-                      title='Média de MPG na Cidade por Fabricante (Top 10)',
-                      labels={'make': 'Fabricante', 'city_mpg': 'Média de MPG na Cidade'})
-        fig1.update_layout(title_x=0.1, yaxis={'categoryorder':'total ascending'})
-        st.plotly_chart(fig1, use_container_width=True)
+with col_g1:
+    top_n = 10
+    df_top_revenue = df_limpo.sort_values(by="revenue", ascending=False).head(top_n)
+    graf1 = px.bar(
+        df_top_revenue,
+        x="names",
+        y="revenue",
+        title=f"Top {top_n} Filmes por Receita",
+        labels={"names": "Filme", "revenue": "Receita"}
+    )
+    st.plotly_chart(graf1, use_container_width=True)
 
-    with col_graf2:
-        # Gráfico: Distribuição de Preços por Tipo de Combustível
-        fig2 = px.histogram(
-            df_filtrado, 
-            x='price', 
-            color='fuel_type', 
-            nbins=30,
-            title="Distribuição de Preços por Tipo de Combustível",
-            labels={'price': 'Faixa de Preço (USD)', 'count': 'Contagem'}
-        )
-        fig2.update_layout(title_x=0.1)
-        st.plotly_chart(fig2, use_container_width=True)
+with col_g2:
+    graf2 = px.histogram(
+        df_limpo,
+        x="score",
+        nbins=20,
+        title="Distribuição das Notas dos Filmes",
+        labels={"score": "Nota", "count": "Frequência"}
+    )
+    st.plotly_chart(graf2, use_container_width=True)
 
-    col_graf3, col_graf4 = st.columns(2)
+col_g3, col_g4 = st.columns(2)
 
-    with col_graf3:
-        # Gráfico: Relação entre Cavalos de Potência e Preço
-        fig3 = px.scatter(df_filtrado, 
-                          x='horsepower', 
-                          y='price', 
-                          color='body_style',
-                          hover_data=['make'],
-                          title='Preço vs. Cavalos de Potência',
-                          labels={'horsepower': 'Cavalos de Potência', 'price': 'Preço'})
-        fig3.update_layout(title_x=0.1)
-        st.plotly_chart(fig3, use_container_width=True)
+with col_g3:
+    contagem_idiomas = df_limpo["orig_lang"].value_counts().head(10).reset_index()
+    contagem_idiomas.columns = ["Idioma Original", "Número de Filmes"]
+    graf3 = px.pie(
+        contagem_idiomas,
+        values="Número de Filmes",
+        names="Idioma Original",
+        title="Top 10 Idiomas Originais",
+        hole=0.3
+    )
+    st.plotly_chart(graf3, use_container_width=True)
 
-    with col_graf4:
-        # Gráfico: Proporção de Veículos por Estilo de Carroceria
-        body_style_counts = df_filtrado['body_style'].value_counts().reset_index()
-        body_style_counts.columns = ['estilo', 'quantidade']
-        fig4 = px.pie(
-            body_style_counts,
-            names='estilo',
-            values='quantidade',
-            title='Proporção por Estilo de Carroceria',
-            hole=0.5
-        )
-        fig4.update_traces(textinfo='percent+label')
-        fig4.update_layout(title_x=0.1)
-        st.plotly_chart(fig4, use_container_width=True)
-else:
-    st.warning("Nenhum dado para exibir com os filtros selecionados.")
+with col_g4:
+    # Receita total por país
+    revenue_country = df_limpo.groupby("country")["revenue"].sum().reset_index()
+    revenue_country.columns = ["iso_alpha", "Total Revenue"]
+
+    def iso2_to_iso3(iso2):
+        try:
+            return pycountry.countries.get(alpha_2=iso2).alpha_3
+        except:
+            return None
+
+    revenue_country["country_iso3"] = revenue_country["iso_alpha"].apply(iso2_to_iso3)
+    revenue_country = revenue_country.dropna(subset=["country_iso3"])
+
+    graf4 = px.choropleth(
+        revenue_country,
+        locations="country_iso3",
+        color="Total Revenue",
+        color_continuous_scale="Plasma",
+        title="Receita Total por País",
+        labels={"Total Revenue": "Receita Total", "country_iso3": "País"}
+    )
+    st.plotly_chart(graf4, use_container_width=True)
 
 st.markdown("---")
 
-# --- Tabela de Dados Detalhados ---
-st.subheader("Dados Detalhados")
-st.dataframe(df_filtrado)
+# --- Tabela Completa ---
+st.subheader("📋 Dados dos Filmes")
+st.dataframe(df_limpo)
