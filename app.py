@@ -5,7 +5,7 @@ import plotly.express as px
 
 st.set_page_config(page_title="Dashboard de Filmes", page_icon="🎬", layout="wide")
 
-# --- tentativa de importar pycountry (corrige erro na linha 5 caso não esteja instalado) ---
+# --- tentativa de importar pycountry ---
 try:
     import pycountry
     HAS_PYCOUNTRY = True
@@ -13,41 +13,42 @@ except Exception:
     pycountry = None
     HAS_PYCOUNTRY = False
 
-# --- Carregar os dados ---
-# Use a URL raw correta do GitHub (ajuste se o arquivo estiver em outra pasta)
-CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
+# --- Carregar os dados (função para cache) ---
+@st.cache_data
+def load_data():
+    """Carrega os dados do CSV e faz o pré-processamento."""
+    CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
+    try:
+        df_limpo = pd.read_csv(CSV_URL, parse_dates=['date_x'])
+        
+        # Garantir tipos corretos e tratar NaNs
+        df_limpo["revenue"] = pd.to_numeric(df_limpo.get("revenue"), errors="coerce").fillna(0)
+        df_limpo["score"] = pd.to_numeric(df_limpo.get("score"), errors="coerce")
+        
+        # Extrair o ano da coluna 'date_x' para usar no filtro
+        df_limpo['year_from_date'] = df_limpo['date_x'].dt.year.fillna(0).astype(int)
+        
+        return df_limpo
+    except Exception as e:
+        st.error(f"Erro ao carregar o arquivo CSV. Verifique a URL ou se o arquivo existe.\nDetalhe: {e}")
+        st.stop()
+        return None
+
+df_limpo = load_data()
+
+if df_limpo is None:
+    st.stop()
 
 # --- Barra Lateral (Filtros) ---
 st.sidebar.header("🔍 Filtros")
 
-# Filtro de Ano
-anos_disponiveis = sorted(df['date_x'].unique())
-anos_selecionados = st.sidebar.multiselect("date_x", anos_disponiveis, default=anos_disponiveis)
-
-try:
-    # Use parse_dates para ler a coluna 'date_x' como data e hora
-    df_limpo = pd.read_csv(CSV_URL, parse_dates=['date_x'])
-except Exception as e:
-    st.error(f"Erro ao carregar o arquivo CSV.\nVerifique a URL ou se o arquivo existe.\nDetalhe: {e}")
-    st.stop()
-
-# Garantir tipos corretos e tratar NaNs
-df_limpo["revenue"] = pd.to_numeric(df_limpo.get("revenue"), errors="coerce").fillna(0)
-df_limpo["score"] = pd.to_numeric(df_limpo.get("score"), errors="coerce")
-
-# EXTRAIR O ANO DA COLUNA 'date_x' PARA USAR NO FILTRO
-df_limpo['year_from_date'] = df_limpo['date_x'].dt.year.fillna(0).astype(int)
-
-# --- Adicionar o filtro na sidebar ---
-st.sidebar.header("Filtros")
-
 # Criar a lista de anos para o filtro
 anos_disponiveis = sorted(df_limpo["year_from_date"].unique())
-# Use st.sidebar.multiselect para permitir a seleção de múltiplos anos
+# Usar st.sidebar.multiselect para permitir a seleção de múltiplos anos
 anos_selecionados = st.sidebar.multiselect(
     "Selecione o(s) Ano(s)",
     options=anos_disponiveis,
-    default=anos_disponiveis # Exibe todos os anos por padrão
+    default=anos_disponiveis  # Exibe todos os anos por padrão
 )
 
 # Filtrar o DataFrame com base na seleção do usuário
@@ -58,9 +59,10 @@ else:
     # Filtra os dados para incluir apenas os anos selecionados
     df_filtrado = df_limpo[df_limpo["year_from_date"].isin(anos_selecionados)]
 
-# --- KPIs ---
+# --- Título principal ---
 st.title("🎬 Dashboard de Filmes")
 
+# --- KPIs ---
 if not df_filtrado.empty:
     receita_total = df_filtrado["revenue"].sum()
     receita_media = df_filtrado["revenue"].mean()
@@ -132,7 +134,7 @@ with col_g4:
     if is_mostly_iso3:
         revenue_country["country_iso3"] = revenue_country["country_raw"].astype(str)
     else:
-        # tenta converter ISO2 -> ISO3 se pycountry estiver disponível
+        # Tenta converter ISO2 -> ISO3 se pycountry estiver disponível
         if HAS_PYCOUNTRY:
             def iso2_to_iso3(iso2):
                 try:
@@ -146,7 +148,7 @@ with col_g4:
                     return None
             revenue_country["country_iso3"] = revenue_country["country_raw"].apply(iso2_to_iso3)
         else:
-            # sem pycountry e sem ISO3 -> não conseguimos criar o mapa
+            # Sem pycountry e sem ISO3 -> não conseguimos criar o mapa
             revenue_country["country_iso3"] = None
 
     revenue_country = revenue_country.dropna(subset=["country_iso3"])
