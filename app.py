@@ -36,15 +36,20 @@ st.sidebar.header("Filtros")
 
 # Criar a lista de anos para o filtro
 anos_disponiveis = sorted(df_limpo["year_from_date"].unique())
-anos_disponiveis.insert(0, "Todos os Anos")
-
-ano_selecionado = st.sidebar.selectbox("Selecione o Ano", anos_disponiveis)
+# Use st.sidebar.multiselect para permitir a seleção de múltiplos anos
+anos_selecionados = st.sidebar.multiselect(
+    "Selecione o(s) Ano(s)",
+    options=anos_disponiveis,
+    default=anos_disponiveis # Exibe todos os anos por padrão
+)
 
 # Filtrar o DataFrame com base na seleção do usuário
-if ano_selecionado == "Todos os Anos":
+if not anos_selecionados:
+    # Se a lista estiver vazia (nenhum ano selecionado), mostre todos os dados
     df_filtrado = df_limpo.copy()
 else:
-    df_filtrado = df_limpo[df_limpo["year_from_date"] == ano_selecionado]
+    # Filtra os dados para incluir apenas os anos selecionados
+    df_filtrado = df_limpo[df_limpo["year_from_date"].isin(anos_selecionados)]
 
 # --- KPIs ---
 st.title("🎬 Dashboard de Filmes")
