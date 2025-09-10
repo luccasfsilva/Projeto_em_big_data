@@ -17,6 +17,13 @@ except Exception:
 # Use a URL raw correta do GitHub (ajuste se o arquivo estiver em outra pasta)
 CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
 
+# --- Barra Lateral (Filtros) ---
+st.sidebar.header("🔍 Filtros")
+
+# Filtro de Ano
+anos_disponiveis = sorted(df['date_x'].unique())
+anos_selecionados = st.sidebar.multiselect("date_x", anos_disponiveis, default=anos_disponiveis)
+
 try:
     # Use parse_dates para ler a coluna 'date_x' como data e hora
     df_limpo = pd.read_csv(CSV_URL, parse_dates=['date_x'])
