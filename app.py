@@ -18,7 +18,8 @@ except Exception:
 CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
 
 try:
-    df_limpo = pd.read_csv(CSV_URL)
+    # Use parse_dates para ler a coluna 'date_x' como data e hora
+    df_limpo = pd.read_csv(CSV_URL, parse_dates=['date_x'])
 except Exception as e:
     st.error(f"Erro ao carregar o arquivo CSV.\nVerifique a URL ou se o arquivo existe.\nDetalhe: {e}")
     st.stop()
@@ -26,13 +27,15 @@ except Exception as e:
 # Garantir tipos corretos e tratar NaNs
 df_limpo["revenue"] = pd.to_numeric(df_limpo.get("revenue"), errors="coerce").fillna(0)
 df_limpo["score"] = pd.to_numeric(df_limpo.get("score"), errors="coerce")
-df_limpo["year"] = pd.to_numeric(df_limpo.get("year"), errors="coerce").fillna(0).astype(int)
+
+# EXTRAIR O ANO DA COLUNA 'date_x' PARA USAR NO FILTRO
+df_limpo['year_from_date'] = df_limpo['date_x'].dt.year.fillna(0).astype(int)
 
 # --- Adicionar o filtro na sidebar ---
 st.sidebar.header("Filtros")
 
 # Criar a lista de anos para o filtro
-anos_disponiveis = sorted(df_limpo["year"].unique())
+anos_disponiveis = sorted(df_limpo["year_from_date"].unique())
 anos_disponiveis.insert(0, "Todos os Anos")
 
 ano_selecionado = st.sidebar.selectbox("Selecione o Ano", anos_disponiveis)
@@ -41,7 +44,7 @@ ano_selecionado = st.sidebar.selectbox("Selecione o Ano", anos_disponiveis)
 if ano_selecionado == "Todos os Anos":
     df_filtrado = df_limpo.copy()
 else:
-    df_filtrado = df_limpo[df_limpo["year"] == ano_selecionado]
+    df_filtrado = df_limpo[df_limpo["year_from_date"] == ano_selecionado]
 
 # --- KPIs ---
 st.title("🎬 Dashboard de Filmes")
