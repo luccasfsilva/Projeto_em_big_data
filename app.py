@@ -26,15 +26,31 @@ except Exception as e:
 # Garantir tipos corretos e tratar NaNs
 df_limpo["revenue"] = pd.to_numeric(df_limpo.get("revenue"), errors="coerce").fillna(0)
 df_limpo["score"] = pd.to_numeric(df_limpo.get("score"), errors="coerce")
+df_limpo["year"] = pd.to_numeric(df_limpo.get("year"), errors="coerce").fillna(0).astype(int)
+
+# --- Adicionar o filtro na sidebar ---
+st.sidebar.header("Filtros")
+
+# Criar a lista de anos para o filtro
+anos_disponiveis = sorted(df_limpo["year"].unique())
+anos_disponiveis.insert(0, "Todos os Anos")
+
+ano_selecionado = st.sidebar.selectbox("Selecione o Ano", anos_disponiveis)
+
+# Filtrar o DataFrame com base na seleção do usuário
+if ano_selecionado == "Todos os Anos":
+    df_filtrado = df_limpo.copy()
+else:
+    df_filtrado = df_limpo[df_limpo["year"] == ano_selecionado]
 
 # --- KPIs ---
 st.title("🎬 Dashboard de Filmes")
 
-if not df_limpo.empty:
-    receita_total = df_limpo["revenue"].sum()
-    receita_media = df_limpo["revenue"].mean()
-    nota_media = df_limpo["score"].mean(skipna=True)
-    total_filmes = df_limpo.shape[0]
+if not df_filtrado.empty:
+    receita_total = df_filtrado["revenue"].sum()
+    receita_media = df_filtrado["revenue"].mean()
+    nota_media = df_filtrado["score"].mean(skipna=True)
+    total_filmes = df_filtrado.shape[0]
 else:
     receita_total = receita_media = nota_media = total_filmes = 0
 
@@ -53,7 +69,7 @@ col_g1, col_g2 = st.columns(2)
 
 with col_g1:
     top_n = 10
-    df_top_revenue = df_limpo.sort_values(by="revenue", ascending=False).head(top_n)
+    df_top_revenue = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
     graf1 = px.bar(
         df_top_revenue,
         x="names",
@@ -65,7 +81,7 @@ with col_g1:
 
 with col_g2:
     graf2 = px.histogram(
-        df_limpo,
+        df_filtrado,
         x="score",
         nbins=20,
         title="Distribuição das Notas dos Filmes",
@@ -76,7 +92,7 @@ with col_g2:
 col_g3, col_g4 = st.columns(2)
 
 with col_g3:
-    contagem_idiomas = df_limpo["orig_lang"].value_counts().head(10).reset_index()
+    contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(10).reset_index()
     contagem_idiomas.columns = ["Idioma Original", "Número de Filmes"]
     graf3 = px.pie(
         contagem_idiomas,
@@ -89,7 +105,7 @@ with col_g3:
 
 with col_g4:
     # Receita total por país
-    revenue_country = df_limpo.groupby("country")["revenue"].sum().reset_index()
+    revenue_country = df_filtrado.groupby("country")["revenue"].sum().reset_index()
     revenue_country.columns = ["country_raw", "Total Revenue"]
 
     # Detecta se 'country_raw' já está em ISO3
@@ -141,4 +157,4 @@ st.markdown("---")
 
 # --- Tabela Completa ---
 st.subheader("📋 Dados dos Filmes")
-st.dataframe(df_limpo)
+st.dataframe(df_filtrado)
