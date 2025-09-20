@@ -18,56 +18,50 @@ except Exception:
     pycountry = None
     HAS_PYCOUNTRY = False
 
-# --- Carregar os dados (função para cache) ---
+# --- Carregar os dados (função com cache) ---
 @st.cache_data
-def load_data():
+def carregar_dados():
     """Carrega os dados do CSV e faz o pré-processamento."""
     CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
     try:
-        df_limpo = pd.read_csv(CSV_URL, parse_dates=['date_x'])
+        df = pd.read_csv(CSV_URL, parse_dates=['date_x'])
         
-        # Garantir tipos corretos e tratar NaNs
-        df_limpo["revenue"] = pd.to_numeric(df_limpo.get("revenue"), errors="coerce").fillna(0)
-        df_limpo["score"] = pd.to_numeric(df_limpo.get("score"), errors="coerce")
+        # Garantir tipos corretos e tratar valores ausentes
+        df["revenue"] = pd.to_numeric(df.get("revenue"), errors="coerce").fillna(0)
+        df["score"] = pd.to_numeric(df.get("score"), errors="coerce")
         
-        # Extrair o ano da coluna 'date_x' para usar no filtro
-        df_limpo['year_from_date'] = df_limpo['date_x'].dt.year.fillna(0).astype(int)
+        # Extrair o ano da coluna 'date_x'
+        df['ano'] = df['date_x'].dt.year.fillna(0).astype(int)
         
-        return df_limpo
+        return df
     except Exception as e:
-        st.error(f"Erro ao carregar o arquivo CSV. Verifique a URL ou se o arquivo existe.\nDetalhe: {e}")
+        st.error(f"❌ Erro ao carregar o arquivo CSV. Verifique a URL ou se o arquivo existe.\nDetalhe: {e}")
         st.stop()
         return None
 
-df_limpo = load_data()
-
-if df_limpo is None:
+df = carregar_dados()
+if df is None:
     st.stop()
 
 # --- Barra Lateral (Filtros) ---
 st.sidebar.header("🔍 Filtros")
 
-# Criar a lista de anos para o filtro
-anos_disponiveis = sorted(df_limpo["year_from_date"].unique())
-# Usar st.sidebar.multiselect para permitir a seleção de múltiplos anos
+anos_disponiveis = sorted(df["ano"].unique())
 anos_selecionados = st.sidebar.multiselect(
-    "Selecione o(s) Ano(s)",
+    "Selecione o(s) Ano(s):",
     options=anos_disponiveis,
-    default=anos_disponiveis  # Exibe todos os anos por padrão
+    default=anos_disponiveis
 )
 
-# Filtrar o DataFrame com base na seleção do usuário
 if not anos_selecionados:
-    # Se a lista estiver vazia (nenhum ano selecionado), mostre todos os dados
-    df_filtrado = df_limpo.copy()
+    df_filtrado = df.copy()
 else:
-    # Filtra os dados para incluir apenas os anos selecionados
-    df_filtrado = df_limpo[df_limpo["year_from_date"].isin(anos_selecionados)]
+    df_filtrado = df[df["ano"].isin(anos_selecionados)]
 
 # --- Título principal ---
 st.title("🎬 Dashboard de Filmes")
 
-# --- KPIs ---
+# --- Indicadores principais (KPIs) ---
 if not df_filtrado.empty:
     receita_total = df_filtrado["revenue"].sum()
     receita_media = df_filtrado["revenue"].mean()
@@ -91,9 +85,9 @@ col_g1, col_g2 = st.columns(2)
 
 with col_g1:
     top_n = 10
-    df_top_revenue = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
+    df_top = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
     graf1 = px.bar(
-        df_top_revenue,
+        df_top,
         x="names",
         y="revenue",
         title=f"Top {top_n} Filmes por Receita",
@@ -106,8 +100,8 @@ with col_g2:
         df_filtrado,
         x="score",
         nbins=20,
-        title="Distribuição das Notas dos Filmes",
-        labels={"score": "Nota", "count": "Frequência"}
+        title="Distribuição das Notas",
+        labels={"score": "Nota", "count": "Quantidade"}
     )
     st.plotly_chart(graf2, use_container_width=True)
 
@@ -115,10 +109,10 @@ col_g3, col_g4 = st.columns(2)
 
 with col_g3:
     contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(10).reset_index()
-    contagem_idiomas.columns = ["Idioma Original", "Número de Filmes"]
+    contagem_idiomas.columns = ["Idioma Original", "Quantidade de Filmes"]
     graf3 = px.pie(
         contagem_idiomas,
-        values="Número de Filmes",
+        values="Quantidade de Filmes",
         names="Idioma Original",
         title="Top 10 Idiomas Originais",
         hole=0.3
@@ -126,57 +120,53 @@ with col_g3:
     st.plotly_chart(graf3, use_container_width=True)
 
 with col_g4:
-    # Receita total por país
-    revenue_country = df_filtrado.groupby("country")["revenue"].sum().reset_index()
-    revenue_country.columns = ["country_raw", "Total Revenue"]
+    receita_pais = df_filtrado.groupby("country")["revenue"].sum().reset_index()
+    receita_pais.columns = ["country_raw", "Receita Total"]
 
-    # Detecta se 'country_raw' já está em ISO3
-    sample_lengths = revenue_country["country_raw"].dropna().astype(str).apply(len)
+    sample_lengths = receita_pais["country_raw"].dropna().astype(str).apply(len)
     is_mostly_iso3 = False
     if not sample_lengths.empty:
         is_mostly_iso3 = (sample_lengths.median() == 3)
 
     if is_mostly_iso3:
-        revenue_country["country_iso3"] = revenue_country["country_raw"].astype(str)
+        receita_pais["country_iso3"] = receita_pais["country_raw"].astype(str)
     else:
-        # Tenta converter ISO2 -> ISO3 se pycountry estiver disponível
         if HAS_PYCOUNTRY:
-            def iso2_to_iso3(iso2):
+            def iso2_para_iso3(iso2):
                 try:
                     if not isinstance(iso2, str):
                         return None
                     iso2 = iso2.strip()
-                    if len(iso2) == 3:  # talvez já seja ISO3
+                    if len(iso2) == 3:
                         return iso2.upper()
                     return pycountry.countries.get(alpha_2=iso2.upper()).alpha_3
                 except Exception:
                     return None
-            revenue_country["country_iso3"] = revenue_country["country_raw"].apply(iso2_to_iso3)
+            receita_pais["country_iso3"] = receita_pais["country_raw"].apply(iso2_para_iso3)
         else:
-            # Sem pycountry e sem ISO3 -> não conseguimos criar o mapa
-            revenue_country["country_iso3"] = None
+            receita_pais["country_iso3"] = None
 
-    revenue_country = revenue_country.dropna(subset=["country_iso3"])
+    receita_pais = receita_pais.dropna(subset=["country_iso3"])
 
-    if revenue_country.empty:
+    if receita_pais.empty:
         st.warning(
-            "Não foi possível gerar o mapa de receita por país.\n"
+            "⚠️ Não foi possível gerar o mapa de receita por país.\n"
             "- Se sua coluna 'country' contém códigos ISO2, instale o pacote 'pycountry' (adicione em requirements.txt) ou\n"
             "- forneça códigos ISO-3 na coluna 'country'."
         )
     else:
         graf4 = px.choropleth(
-            revenue_country,
+            receita_pais,
             locations="country_iso3",
-            color="Total Revenue",
+            color="Receita Total",
             color_continuous_scale="Plasma",
             title="Receita Total por País",
-            labels={"Total Revenue": "Receita Total", "country_iso3": "País"}
+            labels={"Receita Total": "Receita", "country_iso3": "País"}
         )
         st.plotly_chart(graf4, use_container_width=True)
 
 st.markdown("---")
 
-# --- Tabela Completa ---
+# --- Tabela completa ---
 st.subheader("📋 Dados dos Filmes")
 st.dataframe(df_filtrado)
