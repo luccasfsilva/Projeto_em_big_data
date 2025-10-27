@@ -16,7 +16,7 @@ O **CineAnalytics Pro** é uma aplicação web desenvolvida em Python usando Str
 
 ## 🎯 Acesse o Projeto
 
-**[👉 CLIQUE AQUI PARA ACESSAR O DASHBOARD 👈]([https://your-username-cineanalytics-pro.streamlit.app](https://dados-filmes.streamlit.app/)/)**
+**[👉 CLIQUE AQUI PARA ACESSAR O DASHBOARD 👈]([https://your-username-cineanalytics-pro.streamlit.app](https://dados-filmes.streamlit.app/))**
 
 ## 🛠️ Tecnologias
 
