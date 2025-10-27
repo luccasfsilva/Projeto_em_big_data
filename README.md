@@ -4,7 +4,7 @@ Dashboard interativo e moderno para análise de dados de filmes com visualizaç�
 
 ## 🚀 Sobre o Projeto
 
-O **CineAnalytics Pro** é uma aplicação web desenvolvida em Python usando Streamlit que oferece uma análise completa e visual de dados cinematográficos. Com interface moderna e recursos interativos, permite explorar receitas, avaliações e distribuição geográfica de filmes de forma intuitiva.
+O **CineAnalytics Pro** é uma aplicação web desenvolvida em Python usando Streamlit que oferece uma análise completa e visual de dados cinematográficos. Os dados foram processados e tratados usando **Google Colab** para manipulação de grandes volumes de dados (Big Data), garantindo eficiência e escalabilidade no pré-processamento.
 
 ## ✨ Funcionalidades
 
@@ -16,15 +16,16 @@ O **CineAnalytics Pro** é uma aplicação web desenvolvida em Python usando Str
 
 ## 🎯 Acesse o Projeto
 
-**[https://your-username-cineanalytics-pro.streamlit.app](https://dados-filmes.streamlit.app/))**
+**[https://your-username-cineanalytics-pro.streamlit.app](https://dados-filmes.streamlit.app/)**
 
 ## 🛠️ Tecnologias
 
 - **Python** + **Streamlit**
+- **Google Colab** para processamento de Big Data
 - **Pandas** para análise de dados
 - **Plotly** para visualizações
 - **PyCountry** para dados geográficos
 
 ---
 
-*Usando Streamlit*
+*Processamento de dados com Google Colab | Dashboard com Streamlit*
