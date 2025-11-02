@@ -18,7 +18,7 @@ st.markdown("""
 <style>
     .main-header {
         font-size: 3rem;
-        background: linear-gradient(90deg, #8a0b0b, #2e2e2e);
+        background: linear-gradient(90deg, #8a0b0b, #8f8f8f);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
