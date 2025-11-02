@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Configuração da página
 st.set_page_config(
-    page_title="CineAnalytics Pro",
+    page_title="CineAnalytics",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -18,7 +18,7 @@ st.markdown("""
 <style>
     .main-header {
         font-size: 3rem;
-        background: linear-gradient(90deg, #FF6B6B, #4ECDC4);
+        background: linear-gradient(90deg, #8a0b0b, #0b2496);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
