@@ -28,7 +28,7 @@ st.markdown("""
         background: rgba(255,255,255,0.1);
         padding: 1.5rem;
         border-radius: 15px;
-        border-left: 4px solid #4ECDC4;
+        border-left: 4px solid #8a0b0b;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     .stMetric {
