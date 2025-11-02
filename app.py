@@ -18,7 +18,7 @@ st.markdown("""
 <style>
     .main-header {
         font-size: 3rem;
-        background: linear-gradient(90deg, #8a0b0b, #0b2496);
+        background: linear-gradient(90deg, #8a0b0b);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
@@ -115,7 +115,7 @@ df_filtrado = df[
 ]
 
 # --- Header Moderno ---
-st.markdown('<h1 class="main-header">🎬 CineAnalytics Pro</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🎬 CineAnalytics </h1>', unsafe_allow_html=True)
 
 # --- KPIs em Cards Modernos ---
 if not df_filtrado.empty:
