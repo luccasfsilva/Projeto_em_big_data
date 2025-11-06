@@ -5,7 +5,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 
-# Configuração da página
+# =========================
+# CONFIGURAÇÃO DA PÁGINA
+# =========================
 st.set_page_config(
     page_title="CineAnalytics",
     page_icon="🎬",
@@ -13,7 +15,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- Estilos CSS personalizados ---
+# =========================
+# ESTILOS CSS PERSONALIZADOS
+# =========================
 st.markdown("""
 <style>
     .main-header {
@@ -39,7 +43,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Tentativa de importar pycountry ---
+# =========================
+# TENTATIVA DE IMPORTAR PYCOUNTRY
+# =========================
 try:
     import pycountry
     HAS_PYCOUNTRY = True
@@ -47,7 +53,9 @@ except Exception:
     pycountry = None
     HAS_PYCOUNTRY = False
 
-# --- Carregar os dados (função com cache) ---
+# =========================
+# FUNÇÃO PARA CARREGAR OS DADOS
+# =========================
 @st.cache_data
 def carregar_dados():
     """Carrega os dados do CSV e faz o pré-processamento."""
@@ -72,11 +80,13 @@ df = carregar_dados()
 if df is None:
     st.stop()
 
-# --- Barra Lateral Modernizada ---
+# =========================
+# BARRA LATERAL
+# =========================
 with st.sidebar:
     st.header("🎛️ Painel de Controle")
     
-    # Filtro de anos com slider
+    # Filtro de anos
     anos_disponiveis = sorted(df["ano"].unique())
     ano_min, ano_max = st.select_slider(
         "Selecione o Intervalo de Anos:",
@@ -114,10 +124,14 @@ df_filtrado = df[
     (df["revenue"] <= receita_max)
 ]
 
-# --- Header Moderno ---
+# =========================
+# HEADER
+# =========================
 st.markdown('<h1 class="main-header">🎬 CineAnalytics </h1>', unsafe_allow_html=True)
 
-# --- KPIs em Cards Modernos ---
+# =========================
+# MÉTRICAS (KPI CARDS)
+# =========================
 if not df_filtrado.empty:
     receita_total = df_filtrado["revenue"].sum()
     receita_media = df_filtrado["revenue"].mean()
@@ -129,7 +143,7 @@ else:
 col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.metric("💰 Receita Total", f"${receita_total:,.0f}", delta=None)
+    st.metric("💰 Receita Total", f"${receita_total:,.0f}")
     st.markdown('</div>', unsafe_allow_html=True)
     
 with col2:
@@ -149,12 +163,14 @@ with col4:
 
 st.markdown("---")
 
-# --- Gráficos Interativos ---
+# =========================
+# GRÁFICOS INTERATIVOS
+# =========================
 st.subheader("📈 Análises Visuais Interativas")
 
-# Gráfico 1: Top filmes com mais detalhes
 col_g1, col_g2 = st.columns(2)
 
+# Gráfico 1 — Top filmes por receita
 with col_g1:
     top_n = st.slider("Quantos filmes no TOP?", 5, 20, 10)
     df_top = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
@@ -169,14 +185,11 @@ with col_g1:
         color_continuous_scale="viridis",
         hover_data=["score", "ano"]
     )
-    fig1.update_layout(
-        xaxis_tickangle=-45,
-        showlegend=False
-    )
+    fig1.update_layout(xaxis_tickangle=-45, showlegend=False)
     st.plotly_chart(fig1, use_container_width=True)
 
+# Gráfico 2 — Dispersão: Receita vs Nota
 with col_g2:
-    # Gráfico de dispersão: Receita vs Nota
     fig2 = px.scatter(
         df_filtrado,
         x="score",
@@ -190,11 +203,9 @@ with col_g2:
     )
     st.plotly_chart(fig2, use_container_width=True)
 
-# Segunda linha de gráficos
+# Gráfico 3 — Evolução temporal
 col_g3, col_g4 = st.columns(2)
-
 with col_g3:
-    # Gráfico de evolução temporal
     receita_anual = df_filtrado.groupby("ano")["revenue"].sum().reset_index()
     fig3 = px.area(
         receita_anual,
@@ -203,14 +214,13 @@ with col_g3:
         title="📈 Evolução da Receita Anual",
         labels={"ano": "Ano", "revenue": "Receita Total"}
     )
-    fig3.update_traces(line=dict(color="#4ECDC4"), fillcolor="rgba(78, 205, 196, 0.2)")
+    fig3.update_traces(line=dict(color="#4ECDC4"), fillcolor="rgba(78,205,196,0.2)")
     st.plotly_chart(fig3, use_container_width=True)
 
+# Gráfico 4 — Pizza de idiomas
 with col_g4:
-    # Gráfico de pizza melhorado
     contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(8).reset_index()
     contagem_idiomas.columns = ["Idioma Original", "Quantidade de Filmes"]
-    
     fig4 = px.pie(
         contagem_idiomas,
         values="Quantidade de Filmes",
@@ -221,14 +231,15 @@ with col_g4:
     )
     st.plotly_chart(fig4, use_container_width=True)
 
-# --- Mapa Interativo ---
+# =========================
+# MAPA INTERATIVO
+# =========================
 st.subheader("🗺️ Análise Geográfica")
 
 with st.expander("Visualizar Mapa de Receita por País", expanded=True):
     receita_pais = df_filtrado.groupby("country")["revenue"].sum().reset_index()
     receita_pais.columns = ["country_raw", "Receita Total"]
 
-    # Processamento do país (mantido igual)
     sample_lengths = receita_pais["country_raw"].dropna().astype(str).apply(len)
     is_mostly_iso3 = False
     if not sample_lengths.empty:
@@ -272,24 +283,25 @@ with st.expander("Visualizar Mapa de Receita por País", expanded=True):
         fig5.update_layout(height=500)
         st.plotly_chart(fig5, use_container_width=True)
 
-# --- Tabela Interativa ---
+# =========================
+# TABELA INTERATIVA — CORRIGIDA
+# =========================
 st.subheader("📋 Base de Dados Completa")
 
 with st.expander("Explorar Dados dos Filmes", expanded=False):
-    # Filtros rápidos na tabela
     col_f1, col_f2 = st.columns(2)
     with col_f1:
         search_term = st.text_input("🔍 Buscar por nome do filme:")
     with col_f2:
-        sort_by = st.selectbox("Ordenar por:", ["receita", "score", "ano"])
+        sort_by = st.selectbox("Ordenar por:", ["revenue", "score", "ano"], index=0)
 
-    # Aplicar filtros na tabela
     df_display = df_filtrado.copy()
     if search_term:
         df_display = df_display[df_display["names"].str.contains(search_term, case=False, na=False)]
-    
-    df_display = df_display.sort_values(by=sort_by, ascending=False)
-    
+
+    if sort_by in df_display.columns:
+        df_display = df_display.sort_values(by=sort_by, ascending=False)
+
     st.dataframe(
         df_display,
         use_container_width=True,
@@ -297,7 +309,9 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         hide_index=True
     )
 
-# --- Footer ---
+# =========================
+# RODAPÉ
+# =========================
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: #666;'>"
