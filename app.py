@@ -192,7 +192,30 @@ with col_g4:
 # =========================
 # TABELA INTERATIVA (EM PORTUGUÊS)
 # =========================
+import pandas as pd
+import streamlit as st
+from googletrans import Translator
+
 st.subheader("📋 Base de Dados Completa")
+
+# Função para traduzir nomes e gêneros com cache
+@st.cache_data
+def traduzir_colunas(df):
+    translator = Translator()
+
+    # Traduz Nome do Filme
+    df["Nome do Filme"] = df["Nome do Filme"].apply(
+        lambda x: translator.translate(x, src='en', dest='pt').text if isinstance(x, str) else x
+    )
+
+    # Traduz Gênero (se existir)
+    if "Gênero" in df.columns:
+        df["Gênero"] = df["Gênero"].apply(
+            lambda x: translator.translate(x, src='en', dest='pt').text if isinstance(x, str) else x
+        )
+
+    return df
+
 
 with st.expander("Explorar Dados dos Filmes", expanded=False):
     col_f1, col_f2 = st.columns(2)
@@ -207,20 +230,12 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
             index=0
         )
 
-    # Cria cópia do DataFrame filtrado
+    # Cópia do DataFrame original filtrado
     df_display = df_filtrado.copy()
-
-    # 👉 Verifica se existe uma coluna com título em português
-    if "title_pt" in df_display.columns:
-        df_display["Nome do Filme"] = df_display["title_pt"]
-    elif "nome_pt" in df_display.columns:
-        df_display["Nome do Filme"] = df_display["nome_pt"]
-    else:
-        # Caso não exista, usa o nome original
-        df_display["Nome do Filme"] = df_display["names"]
 
     # Renomeia colunas para português
     df_display = df_display.rename(columns={
+        "names": "Nome do Filme",
         "orig_lang": "Idioma Original",
         "revenue": "Receita",
         "score": "Pontuação",
@@ -230,14 +245,17 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "genre": "Gênero"
     })
 
-    # Formata data no padrão dd/mm/aaaa
+    # Converte datas para formato dd/mm/aaaa
     if "Ano de Lançamento" in df_display.columns:
         df_display["Ano de Lançamento"] = pd.to_datetime(
             df_display["Ano de Lançamento"].astype(str),
             errors='coerce'
         ).dt.strftime("%d/%m/%Y")
 
-    # Busca
+    # 🔁 Traduz nomes e gêneros automaticamente (com cache)
+    df_display = traduzir_colunas(df_display)
+
+    # Filtro de busca
     if search_term:
         df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
 
@@ -247,11 +265,10 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "Pontuação": "Pontuação",
         "Ano de Lançamento": "Ano de Lançamento"
     }
-
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
         df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
 
-    # Colunas a exibir
+    # Colunas para exibir
     colunas_para_mostrar = [
         c for c in [
             "Nome do Filme",
@@ -264,13 +281,13 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         ] if c in df_display.columns
     ]
 
+    # Exibe tabela
     st.dataframe(
         df_display[colunas_para_mostrar],
         use_container_width=True,
         height=400,
         hide_index=True
     )
-
 
 # =========================
 # RODAPÉ
