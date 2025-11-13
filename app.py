@@ -299,24 +299,57 @@ st.subheader("📋 Base de Dados Completa")
 
 with st.expander("Explorar Dados dos Filmes", expanded=False):
     col_f1, col_f2 = st.columns(2)
+
     with col_f1:
-        search_term = st.text_input("🔍 Buscar por nome do filme:")
+        search_term = st.text_input("🔍 Buscar pelo nome do filme:")
+
     with col_f2:
-        sort_by = st.selectbox("Ordenar por:", ["revenue", "score", "ano"], index=0)
+        sort_by = st.selectbox(
+            "Ordenar por:",
+            ["Receita", "Pontuação", "Ano"],
+            index=0
+        )
 
+    # Cria uma cópia do DataFrame filtrado
     df_display = df_filtrado.copy()
+
+    # Renomeia colunas para português (ajuste conforme as colunas reais)
+    df_display = df_display.rename(columns={
+        "names": "Nome do Filme",
+        "revenue": "Receita",
+        "score": "Pontuação",
+        "ano": "Ano"
+    })
+
+    # Converte coluna de ano para o formato dd/mm/aaaa (caso seja numérica)
+    if "Ano" in df_display.columns:
+        try:
+            df_display["Ano"] = pd.to_datetime(df_display["Ano"].astype(str), errors='coerce').dt.strftime("%d/%m/%Y")
+        except Exception as e:
+            st.warning(f"Erro ao formatar a data: {e}")
+
+    # Filtro de busca
     if search_term:
-        df_display = df_display[df_display["names"].str.contains(search_term, case=False, na=False)]
+        df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
 
-    if sort_by in df_display.columns:
-        df_display = df_display.sort_values(by=sort_by, ascending=False)
+    # Ordenação
+    sort_map = {
+        "Receita": "Receita",
+        "Pontuação": "Pontuação",
+        "Ano": "Ano"
+    }
 
+    if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
+        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
+
+    # Exibe tabela formatada
     st.dataframe(
         df_display,
         use_container_width=True,
         height=400,
         hide_index=True
     )
+
 
 # =========================
 # RODAPÉ
