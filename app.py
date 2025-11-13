@@ -189,19 +189,10 @@ with col_g4:
 # =========================
 # TABELA INTERATIVA EM PORTUGUÊS
 # =========================
+# =========================
+# TABELA INTERATIVA EM PORTUGUÊS (SEM GOOGLETRANS)
+# =========================
 st.subheader("📋 Base de Dados Completa")
-
-@st.cache_data
-def traduzir_colunas(df):
-    translator = Translator()
-    df["Nome do Filme"] = df["Nome do Filme"].apply(
-        lambda x: translator.translate(x, src='en', dest='pt').text if isinstance(x, str) else x
-    )
-    if "Gênero" in df.columns:
-        df["Gênero"] = df["Gênero"].apply(
-            lambda x: translator.translate(x, src='en', dest='pt').text if isinstance(x, str) else x
-        )
-    return df
 
 with st.expander("Explorar Dados dos Filmes", expanded=False):
     col_f1, col_f2 = st.columns(2)
@@ -226,28 +217,59 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "genre": "Gênero"
     })
 
-    # Traduz nomes e gêneros
-    df_display = traduzir_colunas(df_display)
+    # 🗓️ Formata a data no padrão brasileiro
+    if "Data de Lançamento" in df_display.columns:
+        df_display["Data de Lançamento"] = pd.to_datetime(
+            df_display["Data de Lançamento"], errors="coerce"
+        ).dt.strftime("%d/%m/%Y")
 
-    # Filtro de busca
+    # 💰 Formata a receita como moeda brasileira
+    if "Receita" in df_display.columns:
+        df_display["Receita"] = df_display["Receita"].apply(lambda x: f"R${x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
+    # ⭐ Arredonda as notas
+    if "Pontuação" in df_display.columns:
+        df_display["Pontuação"] = df_display["Pontuação"].round(2)
+
+    # 🔍 Filtro de busca
     if search_term:
         df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
 
-    # Ordenação
+    # 🔢 Ordenação
     sort_map = {
         "Receita": "Receita",
         "Pontuação": "Pontuação",
         "Ano de Lançamento": "Ano de Lançamento"
     }
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
-        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
+        # Para ordenar corretamente por valores numéricos, remove R$, pontos e vírgulas antes
+        if sort_by == "Receita":
+            df_display["Receita_Valor"] = (
+                df_display["Receita"]
+                .str.replace("R\\$", "", regex=True)
+                .str.replace("\\.", "", regex=True)
+                .str.replace(",", ".", regex=True)
+                .astype(float)
+            )
+            df_display = df_display.sort_values(by="Receita_Valor", ascending=False)
+            df_display = df_display.drop(columns=["Receita_Valor"])
+        else:
+            df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
 
+    # 📊 Colunas a exibir
     colunas_para_mostrar = [
         "Nome do Filme", "Gênero", "Idioma Original", "País de Origem",
-        "Pontuação", "Receita", "Ano de Lançamento"
+        "Pontuação", "Receita", "Ano de Lançamento", "Data de Lançamento"
     ]
+    colunas_para_mostrar = [c for c in colunas_para_mostrar if c in df_display.columns]
 
-    st.dataframe(df_display[colunas_para_mostrar], use_container_width=True, height=400, hide_index=True)
+    st.dataframe(
+        df_display[colunas_para_mostrar],
+        use_container_width=True,
+        height=400,
+        hide_index=True
+    )
+
 
 # =========================
 # RODAPÉ
