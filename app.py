@@ -189,6 +189,9 @@ with col_g4:
 # =========================
 # TABELA INTERATIVA
 # =========================
+# =========================
+# TABELA INTERATIVA (EM PORTUGUÊS)
+# =========================
 st.subheader("📋 Base de Dados Completa")
 
 with st.expander("Explorar Dados dos Filmes", expanded=False):
@@ -204,12 +207,20 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
             index=0
         )
 
-    # Cria uma cópia do DataFrame filtrado
+    # Cria cópia do DataFrame filtrado
     df_display = df_filtrado.copy()
 
-    # Renomeia colunas para português (ajuste conforme as colunas reais do CSV)
+    # 👉 Verifica se existe uma coluna com título em português
+    if "title_pt" in df_display.columns:
+        df_display["Nome do Filme"] = df_display["title_pt"]
+    elif "nome_pt" in df_display.columns:
+        df_display["Nome do Filme"] = df_display["nome_pt"]
+    else:
+        # Caso não exista, usa o nome original
+        df_display["Nome do Filme"] = df_display["names"]
+
+    # Renomeia colunas para português
     df_display = df_display.rename(columns={
-        "names": "Nome do Filme",
         "orig_lang": "Idioma Original",
         "revenue": "Receita",
         "score": "Pontuação",
@@ -219,14 +230,14 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "genre": "Gênero"
     })
 
-    # Converte coluna de ano para o formato dd/mm/aaaa
+    # Formata data no padrão dd/mm/aaaa
     if "Ano de Lançamento" in df_display.columns:
         df_display["Ano de Lançamento"] = pd.to_datetime(
             df_display["Ano de Lançamento"].astype(str),
             errors='coerce'
         ).dt.strftime("%d/%m/%Y")
 
-    # Filtro de busca por nome
+    # Busca
     if search_term:
         df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
 
@@ -240,7 +251,7 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
         df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
 
-    # Seleciona apenas colunas principais em português (para evitar excesso de info)
+    # Colunas a exibir
     colunas_para_mostrar = [
         c for c in [
             "Nome do Filme",
@@ -253,13 +264,13 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         ] if c in df_display.columns
     ]
 
-    # Exibe a tabela formatada
     st.dataframe(
         df_display[colunas_para_mostrar],
         use_container_width=True,
         height=400,
         hide_index=True
     )
+
 
 # =========================
 # RODAPÉ
