@@ -200,33 +200,62 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
     with col_f2:
         sort_by = st.selectbox(
             "Ordenar por:",
-            ["Receita", "Pontuação", "Ano"],
+            ["Receita", "Pontuação", "Ano de Lançamento"],
             index=0
         )
 
+    # Cria uma cópia do DataFrame filtrado
     df_display = df_filtrado.copy()
+
+    # Renomeia colunas para português (ajuste conforme as colunas reais do CSV)
     df_display = df_display.rename(columns={
         "names": "Nome do Filme",
+        "orig_lang": "Idioma Original",
         "revenue": "Receita",
         "score": "Pontuação",
-        "ano": "Ano"
+        "ano": "Ano de Lançamento",
+        "date_x": "Data de Lançamento",
+        "country": "País de Origem",
+        "genre": "Gênero"
     })
 
-    if "Ano" in df_display.columns:
-        df_display["Ano"] = pd.to_datetime(
-            df_display["Ano"].astype(str),
+    # Converte coluna de ano para o formato dd/mm/aaaa
+    if "Ano de Lançamento" in df_display.columns:
+        df_display["Ano de Lançamento"] = pd.to_datetime(
+            df_display["Ano de Lançamento"].astype(str),
             errors='coerce'
         ).dt.strftime("%d/%m/%Y")
 
+    # Filtro de busca por nome
     if search_term:
         df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
 
-    sort_map = {"Receita": "Receita", "Pontuação": "Pontuação", "Ano": "Ano"}
+    # Ordenação
+    sort_map = {
+        "Receita": "Receita",
+        "Pontuação": "Pontuação",
+        "Ano de Lançamento": "Ano de Lançamento"
+    }
+
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
         df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
 
+    # Seleciona apenas colunas principais em português (para evitar excesso de info)
+    colunas_para_mostrar = [
+        c for c in [
+            "Nome do Filme",
+            "Gênero",
+            "Idioma Original",
+            "País de Origem",
+            "Pontuação",
+            "Receita",
+            "Ano de Lançamento"
+        ] if c in df_display.columns
+    ]
+
+    # Exibe a tabela formatada
     st.dataframe(
-        df_display,
+        df_display[colunas_para_mostrar],
         use_container_width=True,
         height=400,
         hide_index=True
