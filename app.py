@@ -2,8 +2,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime
+from googletrans import Translator
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -187,42 +187,26 @@ with col_g4:
     st.plotly_chart(fig4, use_container_width=True)
 
 # =========================
-# TABELA INTERATIVA
+# TABELA INTERATIVA EM PORTUGUÊS
 # =========================
-# =========================
-# TABELA INTERATIVA (EM PORTUGUÊS)
-# =========================
-import pandas as pd
-import streamlit as st
-from googletrans import Translator
-
 st.subheader("📋 Base de Dados Completa")
 
-# Função para traduzir nomes e gêneros com cache
 @st.cache_data
 def traduzir_colunas(df):
     translator = Translator()
-
-    # Traduz Nome do Filme
     df["Nome do Filme"] = df["Nome do Filme"].apply(
         lambda x: translator.translate(x, src='en', dest='pt').text if isinstance(x, str) else x
     )
-
-    # Traduz Gênero (se existir)
     if "Gênero" in df.columns:
         df["Gênero"] = df["Gênero"].apply(
             lambda x: translator.translate(x, src='en', dest='pt').text if isinstance(x, str) else x
         )
-
     return df
-
 
 with st.expander("Explorar Dados dos Filmes", expanded=False):
     col_f1, col_f2 = st.columns(2)
-
     with col_f1:
         search_term = st.text_input("🔍 Buscar pelo nome do filme:")
-
     with col_f2:
         sort_by = st.selectbox(
             "Ordenar por:",
@@ -230,11 +214,8 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
             index=0
         )
 
-    # Cópia do DataFrame original filtrado
-    df_display = df_filtrado.copy()
-
-    # Renomeia colunas para português
-    df_display = df_display.rename(columns={
+    # Copia o DataFrame filtrado
+    df_display = df_filtrado.copy().rename(columns={
         "names": "Nome do Filme",
         "orig_lang": "Idioma Original",
         "revenue": "Receita",
@@ -245,14 +226,7 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "genre": "Gênero"
     })
 
-    # Converte datas para formato dd/mm/aaaa
-    if "Ano de Lançamento" in df_display.columns:
-        df_display["Ano de Lançamento"] = pd.to_datetime(
-            df_display["Ano de Lançamento"].astype(str),
-            errors='coerce'
-        ).dt.strftime("%d/%m/%Y")
-
-    # 🔁 Traduz nomes e gêneros automaticamente (com cache)
+    # Traduz nomes e gêneros
     df_display = traduzir_colunas(df_display)
 
     # Filtro de busca
@@ -268,35 +242,18 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
         df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
 
-    # Colunas para exibir
     colunas_para_mostrar = [
-        c for c in [
-            "Nome do Filme",
-            "Gênero",
-            "Idioma Original",
-            "País de Origem",
-            "Pontuação",
-            "Receita",
-            "Ano de Lançamento"
-        ] if c in df_display.columns
+        "Nome do Filme", "Gênero", "Idioma Original", "País de Origem",
+        "Pontuação", "Receita", "Ano de Lançamento"
     ]
 
-    # Exibe tabela
-    st.dataframe(
-        df_display[colunas_para_mostrar],
-        use_container_width=True,
-        height=400,
-        hide_index=True
-    )
+    st.dataframe(df_display[colunas_para_mostrar], use_container_width=True, height=400, hide_index=True)
 
 # =========================
 # RODAPÉ
 # =========================
 st.markdown("---")
 st.markdown(
-    "<div style='text-align: center; color: #666;'>"
-    "📊 Dashboard desenvolvido com Streamlit • "
-    f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-    "</div>",
+    f"<div style='text-align: center; color: #666;'>📊 Dashboard desenvolvido com Streamlit • Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}</div>",
     unsafe_allow_html=True
 )
