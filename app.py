@@ -234,42 +234,51 @@ with col_g4:
 # =========================
 # MAPA INTERATIVO
 # =========================
-st.subheader("🗺️ Análise Geográfica")
+st.subheader("📋 Base de Dados Completa")
 
-with st.expander("Visualizar Mapa de Receita por País", expanded=True):
-    receita_pais = df_filtrado.groupby("country")["revenue"].sum().reset_index()
-    receita_pais.columns = ["country_raw", "Receita Total"]
-
-    sample_lengths = receita_pais["country_raw"].dropna().astype(str).apply(len)
-    is_mostly_iso3 = False
-    if not sample_lengths.empty:
-        is_mostly_iso3 = (sample_lengths.median() == 3)
-
-    if is_mostly_iso3:
-        receita_pais["country_iso3"] = receita_pais["country_raw"].astype(str)
-    else:
-        if HAS_PYCOUNTRY:
-            def iso2_para_iso3(iso2):
-                try:
-                    if not isinstance(iso2, str):
-                        return None
-                    iso2 = iso2.strip()
-                    if len(iso2) == 3:
-                        return iso2.upper()
-                    return pycountry.countries.get(alpha_2=iso2.upper()).alpha_3
-                except Exception:
-                    return None
-            receita_pais["country_iso3"] = receita_pais["country_raw"].apply(iso2_para_iso3)
-        else:
-            receita_pais["country_iso3"] = None
-
-    receita_pais = receita_pais.dropna(subset=["country_iso3"])
-
-    if receita_pais.empty:
-        st.warning(
-            "⚠️ Não foi possível gerar o mapa de receita por país.\n"
-            "- Instale o pacote 'pycountry' para melhor compatibilidade."
+with st.expander("Explorar Dados dos Filmes", expanded=False):
+    col_f1, col_f2 = st.columns(2)
+    with col_f1:
+        search_term = st.text_input("🔍 Buscar pelo nome do filme:")
+    with col_f2:
+        sort_by = st.selectbox(
+            "Ordenar por:",
+            ["Receita", "Pontuação", "Ano"],
+            index=0
         )
+
+    # Cria uma cópia do DataFrame filtrado
+    df_display = df_filtrado.copy()
+
+    # Traduz os nomes das colunas para português (ajuste conforme seus dados)
+    df_display = df_display.rename(columns={
+        "names": "Nome do Filme",
+        "revenue": "Receita",
+        "score": "Pontuação",
+        "ano": "Ano"
+    })
+
+    # Converte coluna de ano para data no formato dd/mm/aaaa
+    if "Ano" in df_display.columns:
+        df_display["Ano"] = pd.to_datetime(df_display["Ano"], errors='coerce').dt.strftime("%d/%m/%Y")
+
+    # Busca por nome
+    if search_term:
+        df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
+
+    # Ordenação
+    sort_map = {"Receita": "Receita", "Pontuação": "Pontuação", "Ano": "Ano"}
+    if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
+        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
+
+    # Exibição
+    st.dataframe(
+        df_display,
+        use_container_width=True,
+        height=400,
+        hide_index=True
+    )
+
     else:
         fig5 = px.choropleth(
             receita_pais,
