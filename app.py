@@ -195,6 +195,7 @@ with col_g4:
 st.subheader("📋 Base de Dados Completa")
 
 with st.expander("Explorar Dados dos Filmes", expanded=False):
+    # Campos de busca e ordenação
     col_f1, col_f2 = st.columns(2)
     with col_f1:
         search_term = st.text_input("🔍 Buscar pelo nome do filme:")
@@ -205,7 +206,7 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
             index=0
         )
 
-    # Copia o DataFrame filtrado
+    # Copia e renomeia colunas do DataFrame original
     df_display = df_filtrado.copy().rename(columns={
         "names": "Nome do Filme",
         "orig_lang": "Idioma Original",
@@ -217,52 +218,54 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "genre": "Gênero"
     })
 
-    # 🗓️ Formata a data no padrão brasileiro
+    # Dicionário de traduções dos nomes dos filmes
+    traducao_filmes = {
+        "It": "It: A Coisa",
+        "Barbie": "Barbie",
+        "The Little Mermaid": "A Pequena Sereia",
+        "Elemental": "Elementos",
+        "The Professional Bridesmaid": "A Dama de Honra Profissional",
+        "Munthiri Kaadu": "A Floresta das Uvas",
+        "No Hard Feelings": "Quer Saber?",
+        "Pretty Young Sister": "Jovem e Bonita",
+        "The Expendables 4": "Os Mercenários 4",
+        "Oppenheimer": "Oppenheimer",
+        "The Flash": "The Flash",
+        "Fast X": "Velozes e Furiosos 10",
+        "Guardians of the Galaxy Vol. 3": "Guardiões da Galáxia Vol. 3",
+        "The Marvels": "As Marvels",
+        "Haunted Mansion": "Mansão Mal-Assombrada"
+    }
+
+    # Substitui os nomes em inglês pelos traduzidos
+    df_display["Nome do Filme"] = df_display["Nome do Filme"].replace(traducao_filmes)
+
+    # Formata a data no padrão brasileiro (dd/mm/aaaa)
     if "Data de Lançamento" in df_display.columns:
         df_display["Data de Lançamento"] = pd.to_datetime(
             df_display["Data de Lançamento"], errors="coerce"
         ).dt.strftime("%d/%m/%Y")
 
-    # 💰 Formata a receita como moeda brasileira
-    if "Receita" in df_display.columns:
-        df_display["Receita"] = df_display["Receita"].apply(lambda x: f"R${x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
-
-    # ⭐ Arredonda as notas
-    if "Pontuação" in df_display.columns:
-        df_display["Pontuação"] = df_display["Pontuação"].round(2)
-
-    # 🔍 Filtro de busca
+    # Filtro de busca (ignora maiúsculas/minúsculas)
     if search_term:
         df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
 
-    # 🔢 Ordenação
+    # Ordenação
     sort_map = {
         "Receita": "Receita",
         "Pontuação": "Pontuação",
         "Ano de Lançamento": "Ano de Lançamento"
     }
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
-        # Para ordenar corretamente por valores numéricos, remove R$, pontos e vírgulas antes
-        if sort_by == "Receita":
-            df_display["Receita_Valor"] = (
-                df_display["Receita"]
-                .str.replace("R\\$", "", regex=True)
-                .str.replace("\\.", "", regex=True)
-                .str.replace(",", ".", regex=True)
-                .astype(float)
-            )
-            df_display = df_display.sort_values(by="Receita_Valor", ascending=False)
-            df_display = df_display.drop(columns=["Receita_Valor"])
-        else:
-            df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
+        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
 
-    # 📊 Colunas a exibir
+    # Colunas a exibir
     colunas_para_mostrar = [
         "Nome do Filme", "Gênero", "Idioma Original", "País de Origem",
         "Pontuação", "Receita", "Ano de Lançamento", "Data de Lançamento"
     ]
-    colunas_para_mostrar = [c for c in colunas_para_mostrar if c in df_display.columns]
 
+    # Exibe a tabela formatada
     st.dataframe(
         df_display[colunas_para_mostrar],
         use_container_width=True,
