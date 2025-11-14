@@ -2,7 +2,9 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
+from streamlit_option_menu import option_menu
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -20,35 +22,60 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main-header {
-        font-size: 3rem;
-        background: linear-gradient(90deg, #cccccc, #8f8f8f);
+        font-size: 3.5rem;
+        background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        text-align: center;
+        margin-bottom: 1rem;
+        font-weight: 800;
+    }
+    .sub-header {
+        font-size: 1.2rem;
+        color: #8f8f8f;
         text-align: center;
         margin-bottom: 2rem;
     }
     .metric-card {
-        background: rgba(255,255,255,0.1);
+        background: linear-gradient(135deg, #2c3e50, #34495e);
         padding: 1.5rem;
         border-radius: 15px;
-        border-left: 4px solid #8a0b0b;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .dataframe {
-        font-size: 14px;
-    }
-    .dataframe thead th {
-        background-color: #2c2c2c;
+        border-left: 5px solid #4ECDC4;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         color: white;
+        height: 100%;
+    }
+    .section-header {
+        font-size: 1.5rem;
+        color: #4ECDC4;
+        margin: 1.5rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #34495e;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #2c3e50;
+        border-radius: 8px 8px 0px 0px;
+        gap: 1px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        color: white;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #4ECDC4;
+        color: #2c3e50;
         font-weight: bold;
-        padding: 12px;
     }
-    .dataframe tbody tr:nth-child(even) {
+    .info-box {
         background-color: #1a1a1a;
-    }
-    .dataframe tbody tr:hover {
-        background-color: #3a3a3a;
-        cursor: pointer;
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 4px solid #FF6B6B;
+        margin: 1rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -184,8 +211,6 @@ TRADUCOES_FILMES = {
     "Central do Brasil": "Central do Brasil",
     "O Auto da Compadecida": "O Auto da Compadecida",
     "Lisbela e o Prisioneiro": "Lisbela e o Prisioneiro",
-    
-    # Adicione mais traduções conforme necessário
 }
 
 def traduzir_nome_filme(nome_original):
@@ -195,35 +220,66 @@ def traduzir_nome_filme(nome_original):
     return TRADUCOES_FILMES.get(nome_original, nome_original)
 
 # =========================
-# BARRA LATERAL
+# BARRA LATERAL MODERNIZADA
 # =========================
 with st.sidebar:
-    st.header("🎛️ Painel de Controle")
-
+    st.markdown("<h2 style='text-align: center; color: #4ECDC4;'>🎛️ Painel de Controle</h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Filtro de anos
+    st.markdown("#### 📅 Filtro por Ano")
     anos_disponiveis = sorted(df["ano"].unique())
     ano_min, ano_max = st.select_slider(
         "Selecione o intervalo de anos:",
         options=anos_disponiveis,
-        value=(min(anos_disponiveis), max(anos_disponiveis))
+        value=(min(anos_disponiveis), max(anos_disponiveis)),
+        help="Filtre os filmes por ano de lançamento"
     )
-
+    
+    st.markdown("---")
+    
+    # Filtro de notas
+    st.markdown("#### ⭐ Filtro por Nota")
     score_min, score_max = st.slider(
-        "Filtrar por nota:",
+        "Selecione a faixa de notas:",
         min_value=0.0,
         max_value=10.0,
         value=(0.0, 10.0),
-        step=0.1
+        step=0.1,
+        help="Filtre os filmes pela nota no IMDb"
     )
-
+    
+    st.markdown("---")
+    
+    # Filtro de receita
+    st.markdown("#### 💰 Filtro por Receita")
     receita_max = df["revenue"].max()
     receita_min, receita_max = st.slider(
-        "Filtrar por receita:",
+        "Selecione a faixa de receita:",
         min_value=0.0,
         max_value=float(receita_max),
         value=(0.0, float(receita_max)),
         step=1_000_000.0,
-        format="$%.0f"
+        format="$%.0f",
+        help="Filtre os filmes pela receita de bilheteria"
     )
+    
+    st.markdown("---")
+    
+    # Informações sobre o dataset
+    with st.expander("ℹ️ Sobre os Dados"):
+        st.markdown("""
+        **Fonte dos dados:** IMDb Movies Dataset
+        
+        **Conteúdo:**
+        - Informações sobre filmes e suas bilheterias
+        - Notas de avaliação
+        - Anos de lançamento
+        - Gêneros e idiomas
+        
+        **Atualização:** Dados carregados automaticamente
+        """)
 
 # Aplicar filtro principal
 df_filtrado = df[
@@ -240,10 +296,12 @@ df_filtrado = df_filtrado.copy()
 df_filtrado["names"] = df_filtrado["names"].apply(traduzir_nome_filme)
 
 # =========================
-# CABEÇALHO E MÉTRICAS
+# CABEÇALHO E MÉTRICAS PRINCIPAIS
 # =========================
 st.markdown('<h1 class="main-header">🎬 CineAnalytics</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Dashboard Interativo de Análise de Filmes e Bilheterias</p>', unsafe_allow_html=True)
 
+# Cartões de métricas principais
 if not df_filtrado.empty:
     receita_total = df_filtrado["revenue"].sum()
     receita_media = df_filtrado["revenue"].mean()
@@ -254,88 +312,241 @@ else:
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("💰 Receita Total", f"${receita_total:,.0f}")
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("💰 Receita Total", f"${receita_total:,.0f}", help="Soma total da receita de todos os filmes filtrados")
+        st.markdown('</div>', unsafe_allow_html=True)
+
 with col2:
-    st.metric("📊 Receita Média", f"${receita_media:,.0f}")
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("📊 Receita Média", f"${receita_media:,.0f}", help="Receita média por filme")
+        st.markdown('</div>', unsafe_allow_html=True)
+
 with col3:
-    st.metric("⭐ Nota Média", f"{nota_media:.2f}" if pd.notna(nota_media) else "—")
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("⭐ Nota Média", f"{nota_media:.2f}" if pd.notna(nota_media) else "—", 
+                 help="Nota média dos filmes no IMDb")
+        st.markdown('</div>', unsafe_allow_html=True)
+
 with col4:
-    st.metric("🎭 Total de Filmes", f"{total_filmes:,}")
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("🎭 Total de Filmes", f"{total_filmes:,}", help="Número total de filmes que correspondem aos filtros")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
 # =========================
-# GRÁFICOS INTERATIVOS
+# NAVEGAÇÃO POR ABAS
 # =========================
-st.subheader("📈 Análises Visuais Interativas")
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Análise Geral", "🎭 Top Filmes", "📈 Tendências", "🔍 Base de Dados"])
 
-col_g1, col_g2 = st.columns(2)
-with col_g1:
-    top_n = st.slider("Quantos filmes no TOP?", 5, 20, 10)
-    df_top = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
-    fig1 = px.bar(
-        df_top,
-        x="names",
-        y="revenue",
-        title=f"🏆 Top {top_n} Filmes por Receita",
-        labels={"names": "Filme", "revenue": "Receita"},
-        color="revenue",
-        color_continuous_scale="viridis",
-        hover_data=["score", "ano"]
-    )
-    fig1.update_layout(xaxis_tickangle=-45, showlegend=False)
-    st.plotly_chart(fig1, use_container_width=True)
+with tab1:
+    st.markdown('<div class="section-header">📊 Visão Geral do Mercado Cinematográfico</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Gráfico de dispersão - Nota vs Receita
+        fig_scatter = px.scatter(
+            df_filtrado,
+            x="score",
+            y="revenue",
+            title="🎯 Relação entre Nota e Receita",
+            labels={"score": "Nota (IMDb)", "revenue": "Receita (USD)"},
+            color="score",
+            size="revenue",
+            hover_data=["names", "ano"],
+            color_continuous_scale="viridis"
+        )
+        fig_scatter.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
+        
+        # Distribuição de idiomas
+        contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(8).reset_index()
+        contagem_idiomas.columns = ["Idioma Original", "Quantidade de Filmes"]
+        fig_pie = px.pie(
+            contagem_idiomas,
+            values="Quantidade de Filmes",
+            names="Idioma Original",
+            title="🌎 Distribuição por Idioma Original",
+            hole=0.4,
+            color_discrete_sequence=px.colors.sequential.Plasma
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
+    
+    with col2:
+        # Evolução temporal da receita
+        receita_anual = df_filtrado.groupby("ano")["revenue"].sum().reset_index()
+        fig_area = px.area(
+            receita_anual,
+            x="ano",
+            y="revenue",
+            title="📈 Evolução da Receita Anual",
+            labels={"ano": "Ano", "revenue": "Receita Total (USD)"}
+        )
+        fig_area.update_traces(
+            line=dict(color="#4ECDC4", width=3), 
+            fillcolor="rgba(78,205,196,0.2)"
+        )
+        fig_area.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_area, use_container_width=True)
+        
+        # Distribuição de notas
+        fig_hist = px.histogram(
+            df_filtrado,
+            x="score",
+            title="📊 Distribuição de Notas dos Filmes",
+            labels={"score": "Nota", "count": "Número de Filmes"},
+            nbins=20,
+            color_discrete_sequence=['#FF6B6B']
+        )
+        fig_hist.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white'),
+            showlegend=False
+        )
+        st.plotly_chart(fig_hist, use_container_width=True)
 
-with col_g2:
-    fig2 = px.scatter(
-        df_filtrado,
-        x="score",
-        y="revenue",
-        title="🎯 Relação: Nota vs Receita",
-        labels={"score": "Nota", "revenue": "Receita"},
-        color="score",
-        size="revenue",
-        hover_data=["names", "ano"],
-        color_continuous_scale="plasma"
-    )
-    st.plotly_chart(fig2, use_container_width=True)
+with tab2:
+    st.markdown('<div class="section-header">🎭 Ranking dos Filmes Mais Bem Sucedidos</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([1, 4])
+    
+    with col1:
+        top_n = st.slider("Número de filmes no TOP:", 5, 25, 10)
+        ordenar_por = st.selectbox("Ordenar por:", ["Receita", "Nota"], index=0)
+    
+    with col2:
+        if ordenar_por == "Receita":
+            df_top = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
+            titulo = f"🏆 Top {top_n} Filmes por Receita"
+            eixo_y = "revenue"
+            label_y = "Receita (USD)"
+        else:
+            df_top = df_filtrado.sort_values(by="score", ascending=False).head(top_n)
+            titulo = f"🏆 Top {top_n} Filmes por Nota"
+            eixo_y = "score"
+            label_y = "Nota"
+        
+        fig_bar = px.bar(
+            df_top,
+            x="names",
+            y=eixo_y,
+            title=titulo,
+            labels={"names": "Filme", eixo_y: label_y},
+            color=eixo_y,
+            color_continuous_scale="viridis",
+            hover_data=["score", "revenue", "ano"] if ordenar_por == "Nota" else ["score", "ano"]
+        )
+        fig_bar.update_layout(
+            xaxis_tickangle=-45, 
+            showlegend=False,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+    
+    # Tabela dos top filmes
+    st.markdown("#### 📋 Detalhes dos Filmes em Destaque")
+    df_display_top = df_top[["names", "score", "revenue", "ano", "orig_lang"]].copy()
+    df_display_top.columns = ["Filme", "Nota", "Receita (USD)", "Ano", "Idioma"]
+    df_display_top["Receita (USD)"] = df_display_top["Receita (USD)"].apply(lambda x: f"${x:,.0f}")
+    st.dataframe(df_display_top, use_container_width=True)
 
-col_g3, col_g4 = st.columns(2)
-with col_g3:
-    receita_anual = df_filtrado.groupby("ano")["revenue"].sum().reset_index()
-    fig3 = px.area(
-        receita_anual,
-        x="ano",
-        y="revenue",
-        title="📈 Evolução da Receita Anual",
-        labels={"ano": "Ano", "revenue": "Receita Total"}
-    )
-    fig3.update_traces(line=dict(color="#4ECDC4"), fillcolor="rgba(78,205,196,0.2)")
-    st.plotly_chart(fig3, use_container_width=True)
+with tab3:
+    st.markdown('<div class="section-header">📈 Análise de Tendências e Padrões</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Média de notas por ano
+        media_notas_anual = df_filtrado.groupby("ano")["score"].mean().reset_index()
+        fig_line = px.line(
+            media_notas_anual,
+            x="ano",
+            y="score",
+            title="📈 Evolução da Nota Média por Ano",
+            labels={"ano": "Ano", "score": "Nota Média"},
+            markers=True
+        )
+        fig_line.update_traces(line=dict(color="#FF6B6B", width=3))
+        fig_line.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_line, use_container_width=True)
+    
+    with col2:
+        # Contagem de filmes por ano
+        contagem_filmes_anual = df_filtrado.groupby("ano").size().reset_index(name="count")
+        fig_bar_count = px.bar(
+            contagem_filmes_anual,
+            x="ano",
+            y="count",
+            title="🎬 Número de Filmes por Ano",
+            labels={"ano": "Ano", "count": "Número de Filmes"},
+            color="count",
+            color_continuous_scale="blues"
+        )
+        fig_bar_count.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white'),
+            showlegend=False
+        )
+        st.plotly_chart(fig_bar_count, use_container_width=True)
+    
+    # Heatmap de correlação
+    st.markdown("#### 🔍 Mapa de Correlações")
+    numeric_cols = df_filtrado.select_dtypes(include=['number']).columns
+    if len(numeric_cols) > 1:
+        corr_matrix = df_filtrado[numeric_cols].corr()
+        fig_heatmap = px.imshow(
+            corr_matrix,
+            title="Mapa de Calor de Correlações entre Variáveis Numéricas",
+            color_continuous_scale="RdBu_r",
+            aspect="auto"
+        )
+        fig_heatmap.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_heatmap, use_container_width=True)
 
-with col_g4:
-    contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(8).reset_index()
-    contagem_idiomas.columns = ["Idioma Original", "Quantidade de Filmes"]
-    fig4 = px.pie(
-        contagem_idiomas,
-        values="Quantidade de Filmes",
-        names="Idioma Original",
-        title="🌎 Distribuição de Idiomas Originais",
-        hole=0.4,
-        color_discrete_sequence=px.colors.sequential.RdBu
-    )
-    st.plotly_chart(fig4, use_container_width=True)
-
-# =========================
-# TABELA INTERATIVA EM PORTUGUÊS
-# =========================
-st.subheader("📋 Base de Dados Completa")
-
-with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
-    # Campos de busca e ordenação
+with tab4:
+    st.markdown('<div class="section-header">🔍 Explorar Base de Dados Completa</div>', unsafe_allow_html=True)
+    
+    # Informações sobre o dataset
+    col_info1, col_info2, col_info3 = st.columns(3)
+    
+    with col_info1:
+        st.metric("Total de Filmes no Dataset", f"{len(df):,}")
+    
+    with col_info2:
+        st.metric("Período Abrangido", f"{df['ano'].min()} - {df['ano'].max()}")
+    
+    with col_info3:
+        st.metric("Idiomas Diferentes", f"{df['orig_lang'].nunique()}")
+    
+    # Filtros de busca
     col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
     with col_f1:
-        search_term = st.text_input("Buscar pelo nome do filme:", placeholder="Digite o nome do filme...")
+        search_term = st.text_input("🔍 Buscar filme:", placeholder="Digite o nome do filme...")
     with col_f2:
         sort_by = st.selectbox(
             "Ordenar por:",
@@ -424,14 +635,17 @@ with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
         )
         
         # Botão para exportar dados
-        if st.button("📥 Exportar Dados para CSV"):
-            csv = df_display[colunas_para_mostrar].to_csv(index=False)
-            st.download_button(
-                label="Baixar CSV",
-                data=csv,
-                file_name="filmes_traduzidos.csv",
-                mime="text/csv"
-            )
+        col_export1, col_export2 = st.columns([3, 1])
+        with col_export2:
+            if st.button("📥 Exportar Dados para CSV", use_container_width=True):
+                csv = df_display[colunas_para_mostrar].to_csv(index=False)
+                st.download_button(
+                    label="Baixar CSV",
+                    data=csv,
+                    file_name="filmes_traduzidos.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
     else:
         st.warning("🎭 Nenhum filme encontrado com os filtros aplicados.")
 
@@ -440,6 +654,9 @@ with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
 # =========================
 st.markdown("---")
 st.markdown(
-    f"<div style='text-align: center; color: #666;'>📊 Dashboard desenvolvido com Streamlit • Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}</div>",
+    f"<div style='text-align: center; color: #666;'>"
+    f"📊 Dashboard CineAnalytics • Desenvolvido com Streamlit • "
+    f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    f"</div>",
     unsafe_allow_html=True
 )
