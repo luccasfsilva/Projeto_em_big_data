@@ -4,7 +4,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
-from streamlit_option_menu import option_menu
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -425,8 +424,8 @@ with tab2:
     col1, col2 = st.columns([1, 4])
     
     with col1:
-        top_n = st.slider("Número de filmes no TOP:", 5, 25, 10)
-        ordenar_por = st.selectbox("Ordenar por:", ["Receita", "Nota"], index=0)
+        top_n = st.slider("Número de filmes no TOP:", 5, 25, 10, key="top_slider")
+        ordenar_por = st.selectbox("Ordenar por:", ["Receita", "Nota"], index=0, key="ordenar_por")
     
     with col2:
         if ordenar_por == "Receita":
