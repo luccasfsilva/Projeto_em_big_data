@@ -74,6 +74,127 @@ if df is None:
     st.stop()
 
 # =========================
+# DICIONÁRIO DE TRADUÇÃO DOS FILMES
+# =========================
+TRADUCOES_FILMES = {
+    # Filmes Populares
+    "Avatar: The Way of Water": "Avatar: O Caminho da Água",
+    "Avengers: Endgame": "Vingadores: Ultimato",
+    "Avatar": "Avatar",
+    "Titanic": "Titanic",
+    "Star Wars: Episode VII - The Force Awakens": "Star Wars: Episódio VII - O Despertar da Força",
+    "Avengers: Infinity War": "Vingadores: Guerra Infinita",
+    "Spider-Man: No Way Home": "Homem-Aranha: Sem Volta para Casa",
+    "Jurassic World": "Mundo Jurássico",
+    "The Lion King": "O Rei Leão",
+    "The Avengers": "Os Vingadores",
+    "Furious 7": "Velozes e Furiosos 7",
+    "Frozen II": "Frozen II",
+    "Top Gun: Maverick": "Top Gun: Maverick",
+    "Barbie": "Barbie",
+    "The Super Mario Bros. Movie": "Super Mario Bros.: O Filme",
+    "Avengers: Age of Ultron": "Vingadores: Era de Ultron",
+    "Black Panther": "Pantera Negra",
+    "Harry Potter and the Deathly Hallows: Part 2": "Harry Potter e as Relíquias da Morte: Parte 2",
+    "Star Wars: Episode VIII - The Last Jedi": "Star Wars: Episódio VIII - Os Últimos Jedi",
+    "Jurassic World: Fallen Kingdom": "Mundo Jurássico: Reino Ameaçado",
+    "Frozen": "Frozen: Uma Aventura Congelante",
+    "Beauty and the Beast": "A Bela e a Fera",
+    "Incredibles 2": "Os Incríveis 2",
+    "The Fate of the Furious": "O Destino de Velozes e Furiosos",
+    "Iron Man 3": "Homem de Ferro 3",
+    "Minions": "Minions",
+    "Captain America: Civil War": "Capitão América: Guerra Civil",
+    "Aquaman": "Aquaman",
+    "The Lord of the Rings: The Return of the King": "O Senhor dos Anéis: O Retorno do Rei",
+    "Spider-Man: Far From Home": "Homem-Aranha: Longe de Casa",
+    
+    # Filmes de Ação e Aventura
+    "Transformers: Dark of the Moon": "Transformers: O Lado Oculto da Lua",
+    "Skyfall": "007 - Operação Skyfall",
+    "Transformers: Age of Extinction": "Transformers: A Era da Extinção",
+    "The Dark Knight Rises": "Batman: O Cavaleiro das Trevas Ressurge",
+    "Toy Story 4": "Toy Story 4",
+    "Toy Story 3": "Toy Story 3",
+    "Pirates of the Caribbean: Dead Man's Chest": "Piratas do Caribe: O Baú da Morte",
+    "Rogue One: A Star Wars Story": "Rogue One: Uma História Star Wars",
+    "Pirates of the Caribbean: On Stranger Tides": "Piratas do Caribe: Navegando em Águas Misteriosas",
+    "Despicable Me 3": "Meu Malvado Favorito 3",
+    "Jumanji: Welcome to the Jungle": "Jumanji: Bem-vindo à Selva",
+    "Justice League": "Liga da Justiça",
+    "The Dark Knight": "Batman: O Cavaleiro das Trevas",
+    
+    # Filmes de Animação
+    "Finding Dory": "Procurando Dory",
+    "Zootopia": "Zootopia: Essa Cidade é o Bicho",
+    "Despicable Me 2": "Meu Malvado Favorito 2",
+    "The Grinch": "O Grinch",
+    "Finding Nemo": "Procurando Nemo",
+    "Shrek 2": "Shrek 2",
+    "The Secret Life of Pets": "A Vida Secreta dos Bichos",
+    "Inside Out": "Divertida Mente",
+    "The Incredibles": "Os Incríveis",
+    "Shrek the Third": "Shrek Terceiro",
+    "Shrek": "Shrek",
+    "Madagascar 3: Europe's Most Wanted": "Madagascar 3: Os Procurados",
+    "Monsters, Inc.": "Monstros S.A.",
+    "Up": "Up: Altas Aventuras",
+    "Spider-Man: Into the Spider-Verse": "Homem-Aranha no Aranhaverso",
+    
+    # Filmes Recentes
+    "Oppenheimer": "Oppenheimer",
+    "Guardians of the Galaxy Vol. 3": "Guardiões da Galáxia Vol. 3",
+    "Fast X": "Velozes e Furiosos 10",
+    "The Little Mermaid": "A Pequena Sereia",
+    "Elemental": "Elementos",
+    "Ant-Man and the Wasp: Quantumania": "Homem-Formiga e a Vespa: Quantumania",
+    "John Wick: Chapter 4": "John Wick 4: Baba Yaga",
+    "The Flash": "The Flash",
+    "Transformers: Rise of the Beasts": "Transformers: O Despertar das Feras",
+    "Spider-Man: Across the Spider-Verse": "Homem-Aranha: Através do Aranhaverso",
+    "Indiana Jones and the Dial of Destiny": "Indiana Jones e o Chamado do Destino",
+    "Mission: Impossible - Dead Reckoning Part One": "Missão: Impossível - Acerto de Contas Parte Um",
+    "The Marvels": "As Marvels",
+    "Wonka": "Wonka",
+    "Aquaman and the Lost Kingdom": "Aquaman e o Reino Perdido",
+    "The Hunger Games: The Ballad of Songbirds & Snakes": "Jogos Vorazes: A Cantiga dos Pássaros e das Serpentes",
+    
+    # Filmes Diversos
+    "The Lord of the Rings: The Two Towers": "O Senhor dos Anéis: As Duas Torres",
+    "The Lord of the Rings: The Fellowship of the Ring": "O Senhor dos Anéis: A Sociedade do Anel",
+    "The Matrix Reloaded": "Matrix Reloaded",
+    "The Twilight Saga: Breaking Dawn - Part 2": "A Saga Crepúsculo: Amanhecer - Parte 2",
+    "The Twilight Saga: New Moon": "A Saga Crepúsculo: Lua Nova",
+    "The Twilight Saga: Eclipse": "A Saga Crepúsculo: Eclipse",
+    "The Twilight Saga: Breaking Dawn - Part 1": "A Saga Crepúsculo: Amanhecer - Parte 1",
+    "The Hobbit: An Unexpected Journey": "O Hobbit: Uma Jornada Inesperada",
+    "The Hobbit: The Desolation of Smaug": "O Hobbit: A Desolação de Smaug",
+    "The Hobbit: The Battle of the Five Armies": "O Hobbit: A Batalha dos Cinco Exércitos",
+    "The Da Vinci Code": "O Código Da Vinci",
+    "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe": "As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa",
+    "The Passion of the Christ": "A Paixão de Cristo",
+    "The Exorcist": "O Exorcista",
+    "The Sound of Music": "A Noviça Rebelde",
+    "The Sting": "Um Golpe de Mestre",
+    "Butch Cassidy and the Sundance Kid": "Butch Cassidy e o Menino da Lua",
+    
+    # Filmes em Português (manter como estão)
+    "Cidade de Deus": "Cidade de Deus",
+    "Tropa de Elite": "Tropa de Elite",
+    "Central do Brasil": "Central do Brasil",
+    "O Auto da Compadecida": "O Auto da Compadecida",
+    "Lisbela e o Prisioneiro": "Lisbela e o Prisioneiro",
+    
+    # Adicione mais traduções conforme necessário
+}
+
+def traduzir_nome_filme(nome_original):
+    """Traduz o nome do filme para português"""
+    if pd.isna(nome_original):
+        return nome_original
+    return TRADUCOES_FILMES.get(nome_original, nome_original)
+
+# =========================
 # BARRA LATERAL
 # =========================
 with st.sidebar:
@@ -104,7 +225,7 @@ with st.sidebar:
         format="$%.0f"
     )
 
-# Filtro principal
+# Aplicar filtro principal
 df_filtrado = df[
     (df["ano"] >= ano_min) &
     (df["ano"] <= ano_max) &
@@ -113,6 +234,10 @@ df_filtrado = df[
     (df["revenue"] >= receita_min) &
     (df["revenue"] <= receita_max)
 ]
+
+# Aplicar tradução aos nomes dos filmes
+df_filtrado = df_filtrado.copy()
+df_filtrado["names"] = df_filtrado["names"].apply(traduzir_nome_filme)
 
 # =========================
 # CABEÇALHO E MÉTRICAS
@@ -202,7 +327,7 @@ with col_g4:
     st.plotly_chart(fig4, use_container_width=True)
 
 # =========================
-# TABELA INTERATIVA EM PORTUGUÊS - MELHORADA
+# TABELA INTERATIVA EM PORTUGUÊS
 # =========================
 st.subheader("📋 Base de Dados Completa")
 
@@ -220,7 +345,7 @@ with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
     with col_f3:
         resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0)
 
-    # Copia e renomeia colunas do DataFrame original
+    # Preparar dados para exibição
     df_display = df_filtrado.copy().rename(columns={
         "names": "Nome do Filme",
         "orig_lang": "Idioma Original",
@@ -232,55 +357,25 @@ with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
         "genre": "Gênero"
     })
 
-    # Dicionário de traduções dos nomes dos filmes (expandido)
-    traducao_filmes = {
-        "It": "It: A Coisa",
-        "Barbie": "Barbie",
-        "The Little Mermaid": "A Pequena Sereia",
-        "Elemental": "Elementos",
-        "The Professional Bridesmaid": "A Dama de Honra Profissional",
-        "Munthiri Kaadu": "A Floresta das Uvas",
-        "No Hard Feelings": "Quer Saber?",
-        "Pretty Young Sister": "Jovem e Bonita",
-        "The Expendables 4": "Os Mercenários 4",
-        "Oppenheimer": "Oppenheimer",
-        "The Flash": "The Flash",
-        "Fast X": "Velozes e Furiosos 10",
-        "Guardians of the Galaxy Vol. 3": "Guardiões da Galáxia Vol. 3",
-        "The Marvels": "As Marvels",
-        "Haunted Mansion": "Mansão Mal-Assombrada",
-        "Spider-Man: Across the Spider-Verse": "Homem-Aranha: Através do Aranhaverso",
-        "Avatar: The Way of Water": "Avatar: O Caminho da Água",
-        "Black Panther": "Pantera Negra",
-        "Avengers: Endgame": "Vingadores: Ultimato",
-        "The Batman": "Batman",
-        "Jurassic World": "Mundo Jurássico",
-        "Frozen": "Frozen: Uma Aventura Congelante",
-        "The Super Mario Bros. Movie": "Super Mario Bros.: O Filme",
-        "Transformers": "Transformers",
-        "Iron Man": "Homem de Ferro"
-    }
-
-    # Substitui os nomes em inglês pelos traduzidos
-    df_display["Nome do Filme"] = df_display["Nome do Filme"].replace(traducao_filmes)
-
     # Formata a data no padrão brasileiro (dd/mm/aaaa)
     if "Data de Lançamento" in df_display.columns:
         df_display["Data de Lançamento"] = pd.to_datetime(
             df_display["Data de Lançamento"], errors="coerce"
         ).dt.strftime("%d/%m/%Y")
 
-    # Formata a receita como moeda
+    # Formata a receita como moeda (mantém como número para ordenação)
+    df_display["Receita_Original"] = df_display["Receita"]
     df_display["Receita"] = df_display["Receita"].apply(
-        lambda x: f"${x:,.2f}" if pd.notnull(x) else "N/A"
+        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
     )
 
-    # Formata a pontuação
+    # Formata a pontuação (mantém como número para ordenação)
+    df_display["Pontuação_Original"] = df_display["Pontuação"]
     df_display["Pontuação"] = df_display["Pontuação"].apply(
         lambda x: f"{x:.1f}" if pd.notnull(x) else "N/A"
     )
 
-    # Filtro de busca (ignora maiúsculas/minúsculas)
+    # Filtro de busca
     if search_term:
         df_display = df_display[
             df_display["Nome do Filme"].str.contains(search_term, case=False, na=False) |
@@ -290,14 +385,14 @@ with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
 
     # Ordenação
     sort_map = {
-        "Receita": "Receita",
-        "Pontuação": "Pontuação",
+        "Receita": "Receita_Original",
+        "Pontuação": "Pontuação_Original", 
         "Ano de Lançamento": "Ano de Lançamento",
         "Nome do Filme": "Nome do Filme"
     }
     
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
-        ascending = sort_by == "Nome do Filme"  # Ordem alfabética para nomes
+        ascending = sort_by == "Nome do Filme"
         df_display = df_display.sort_values(by=sort_map[sort_by], ascending=ascending)
 
     # Colunas a exibir
@@ -327,8 +422,18 @@ with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
             height=400,
             hide_index=True
         )
+        
+        # Botão para exportar dados
+        if st.button("📥 Exportar Dados para CSV"):
+            csv = df_display[colunas_para_mostrar].to_csv(index=False)
+            st.download_button(
+                label="Baixar CSV",
+                data=csv,
+                file_name="filmes_traduzidos.csv",
+                mime="text/csv"
+            )
     else:
-        st.warning("Nenhum resultado encontrado com os filtros aplicados.")
+        st.warning("🎭 Nenhum filme encontrado com os filtros aplicados.")
 
 # =========================
 # RODAPÉ
