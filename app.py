@@ -4,7 +4,6 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
-
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
@@ -34,6 +33,22 @@ st.markdown("""
         border-radius: 15px;
         border-left: 4px solid #8a0b0b;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .dataframe {
+        font-size: 14px;
+    }
+    .dataframe thead th {
+        background-color: #2c2c2c;
+        color: white;
+        font-weight: bold;
+        padding: 12px;
+    }
+    .dataframe tbody tr:nth-child(even) {
+        background-color: #1a1a1a;
+    }
+    .dataframe tbody tr:hover {
+        background-color: #3a3a3a;
+        cursor: pointer;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -187,24 +202,23 @@ with col_g4:
     st.plotly_chart(fig4, use_container_width=True)
 
 # =========================
-# TABELA INTERATIVA EM PORTUGUÊS
-# =========================
-# =========================
-# TABELA INTERATIVA EM PORTUGUÊS (SEM GOOGLETRANS)
+# TABELA INTERATIVA EM PORTUGUÊS - MELHORADA
 # =========================
 st.subheader("📋 Base de Dados Completa")
 
-with st.expander("Explorar Dados dos Filmes", expanded=False):
+with st.expander("🔍 Explorar Dados dos Filmes", expanded=False):
     # Campos de busca e ordenação
-    col_f1, col_f2 = st.columns(2)
+    col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
     with col_f1:
-        search_term = st.text_input("🔍 Buscar pelo nome do filme:")
+        search_term = st.text_input("Buscar pelo nome do filme:", placeholder="Digite o nome do filme...")
     with col_f2:
         sort_by = st.selectbox(
             "Ordenar por:",
-            ["Receita", "Pontuação", "Ano de Lançamento"],
+            ["Receita", "Pontuação", "Ano de Lançamento", "Nome do Filme"],
             index=0
         )
+    with col_f3:
+        resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0)
 
     # Copia e renomeia colunas do DataFrame original
     df_display = df_filtrado.copy().rename(columns={
@@ -218,7 +232,7 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "genre": "Gênero"
     })
 
-    # Dicionário de traduções dos nomes dos filmes
+    # Dicionário de traduções dos nomes dos filmes (expandido)
     traducao_filmes = {
         "It": "It: A Coisa",
         "Barbie": "Barbie",
@@ -234,7 +248,17 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "Fast X": "Velozes e Furiosos 10",
         "Guardians of the Galaxy Vol. 3": "Guardiões da Galáxia Vol. 3",
         "The Marvels": "As Marvels",
-        "Haunted Mansion": "Mansão Mal-Assombrada"
+        "Haunted Mansion": "Mansão Mal-Assombrada",
+        "Spider-Man: Across the Spider-Verse": "Homem-Aranha: Através do Aranhaverso",
+        "Avatar: The Way of Water": "Avatar: O Caminho da Água",
+        "Black Panther": "Pantera Negra",
+        "Avengers: Endgame": "Vingadores: Ultimato",
+        "The Batman": "Batman",
+        "Jurassic World": "Mundo Jurássico",
+        "Frozen": "Frozen: Uma Aventura Congelante",
+        "The Super Mario Bros. Movie": "Super Mario Bros.: O Filme",
+        "Transformers": "Transformers",
+        "Iron Man": "Homem de Ferro"
     }
 
     # Substitui os nomes em inglês pelos traduzidos
@@ -246,18 +270,35 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
             df_display["Data de Lançamento"], errors="coerce"
         ).dt.strftime("%d/%m/%Y")
 
+    # Formata a receita como moeda
+    df_display["Receita"] = df_display["Receita"].apply(
+        lambda x: f"${x:,.2f}" if pd.notnull(x) else "N/A"
+    )
+
+    # Formata a pontuação
+    df_display["Pontuação"] = df_display["Pontuação"].apply(
+        lambda x: f"{x:.1f}" if pd.notnull(x) else "N/A"
+    )
+
     # Filtro de busca (ignora maiúsculas/minúsculas)
     if search_term:
-        df_display = df_display[df_display["Nome do Filme"].str.contains(search_term, case=False, na=False)]
+        df_display = df_display[
+            df_display["Nome do Filme"].str.contains(search_term, case=False, na=False) |
+            df_display["Gênero"].str.contains(search_term, case=False, na=False) |
+            df_display["País de Origem"].str.contains(search_term, case=False, na=False)
+        ]
 
     # Ordenação
     sort_map = {
         "Receita": "Receita",
         "Pontuação": "Pontuação",
-        "Ano de Lançamento": "Ano de Lançamento"
+        "Ano de Lançamento": "Ano de Lançamento",
+        "Nome do Filme": "Nome do Filme"
     }
+    
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
-        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=False)
+        ascending = sort_by == "Nome do Filme"  # Ordem alfabética para nomes
+        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=ascending)
 
     # Colunas a exibir
     colunas_para_mostrar = [
@@ -265,14 +306,29 @@ with st.expander("Explorar Dados dos Filmes", expanded=False):
         "Pontuação", "Receita", "Ano de Lançamento", "Data de Lançamento"
     ]
 
-    # Exibe a tabela formatada
-    st.dataframe(
-        df_display[colunas_para_mostrar],
-        use_container_width=True,
-        height=400,
-        hide_index=True
-    )
-
+    # Sistema de paginação
+    total_resultados = len(df_display)
+    if total_resultados > 0:
+        total_paginas = (total_resultados + resultados_por_pagina - 1) // resultados_por_pagina
+        pagina_atual = st.number_input("Página:", min_value=1, max_value=total_paginas, value=1)
+        
+        inicio = (pagina_atual - 1) * resultados_por_pagina
+        fim = inicio + resultados_por_pagina
+        
+        df_paginado = df_display.iloc[inicio:fim]
+        
+        # Exibe informações da paginação
+        st.caption(f"Mostrando {inicio + 1}-{min(fim, total_resultados)} de {total_resultados} resultados")
+        
+        # Exibe a tabela formatada
+        st.dataframe(
+            df_paginado[colunas_para_mostrar],
+            use_container_width=True,
+            height=400,
+            hide_index=True
+        )
+    else:
+        st.warning("Nenhum resultado encontrado com os filtros aplicados.")
 
 # =========================
 # RODAPÉ
