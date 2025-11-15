@@ -22,7 +22,7 @@ st.markdown("""
 <style>
     .main-header {
         font-size: 3.5rem;
-        background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
+        background: linear-gradient(90deg, #FF6B6B, #ff6b6b, #45B7D1);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
@@ -39,14 +39,14 @@ st.markdown("""
         background: linear-gradient(135deg, #2c3e50, #34495e);
         padding: 1.5rem;
         border-radius: 15px;
-        border-left: 5px solid #4ECDC4;
+        border-left: 5px solid #ff6b6b
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         color: white;
         height: 100%;
     }
     .section-header {
         font-size: 1.5rem;
-        color: #4ECDC4;
+        color: #ff6b6b
         margin: 1.5rem 0 1rem 0;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #34495e;
@@ -65,7 +65,7 @@ st.markdown("""
         color: white;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #4ECDC4;
+        background-color: #ff6b6b
         color: #2c3e50;
         font-weight: bold;
     }
