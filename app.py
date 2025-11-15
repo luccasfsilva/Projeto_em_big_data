@@ -5,8 +5,6 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -142,10 +140,116 @@ if df is None:
     st.stop()
 
 # =========================
-# DICIONÁRIO DE TRADUÇÃO DOS FILMES (mantido do código anterior)
+# DICIONÁRIO DE TRADUÇÃO DOS FILMES
 # =========================
 TRADUCOES_FILMES = {
-    # ... (mantenha o mesmo dicionário de traduções do código anterior)
+    # Filmes Populares
+    "Avatar: The Way of Water": "Avatar: O Caminho da Água",
+    "Avengers: Endgame": "Vingadores: Ultimato",
+    "Avatar": "Avatar",
+    "Titanic": "Titanic",
+    "Star Wars: Episode VII - The Force Awakens": "Star Wars: Episódio VII - O Despertar da Força",
+    "Avengers: Infinity War": "Vingadores: Guerra Infinita",
+    "Spider-Man: No Way Home": "Homem-Aranha: Sem Volta para Casa",
+    "Jurassic World": "Mundo Jurássico",
+    "The Lion King": "O Rei Leão",
+    "The Avengers": "Os Vingadores",
+    "Furious 7": "Velozes e Furiosos 7",
+    "Frozen II": "Frozen II",
+    "Top Gun: Maverick": "Top Gun: Maverick",
+    "Barbie": "Barbie",
+    "The Super Mario Bros. Movie": "Super Mario Bros.: O Filme",
+    "Avengers: Age of Ultron": "Vingadores: Era de Ultron",
+    "Black Panther": "Pantera Negra",
+    "Harry Potter and the Deathly Hallows: Part 2": "Harry Potter e as Relíquias da Morte: Parte 2",
+    "Star Wars: Episode VIII - The Last Jedi": "Star Wars: Episódio VIII - Os Últimos Jedi",
+    "Jurassic World: Fallen Kingdom": "Mundo Jurássico: Reino Ameaçado",
+    "Frozen": "Frozen: Uma Aventura Congelante",
+    "Beauty and the Beast": "A Bela e a Fera",
+    "Incredibles 2": "Os Incríveis 2",
+    "The Fate of the Furious": "O Destino de Velozes e Furiosos",
+    "Iron Man 3": "Homem de Ferro 3",
+    "Minions": "Minions",
+    "Captain America: Civil War": "Capitão América: Guerra Civil",
+    "Aquaman": "Aquaman",
+    "The Lord of the Rings: The Return of the King": "O Senhor dos Anéis: O Retorno do Rei",
+    "Spider-Man: Far From Home": "Homem-Aranha: Longe de Casa",
+    
+    # Filmes de Ação e Aventura
+    "Transformers: Dark of the Moon": "Transformers: O Lado Oculto da Lua",
+    "Skyfall": "007 - Operação Skyfall",
+    "Transformers: Age of Extinction": "Transformers: A Era da Extinção",
+    "The Dark Knight Rises": "Batman: O Cavaleiro das Trevas Ressurge",
+    "Toy Story 4": "Toy Story 4",
+    "Toy Story 3": "Toy Story 3",
+    "Pirates of the Caribbean: Dead Man's Chest": "Piratas do Caribe: O Baú da Morte",
+    "Rogue One: A Star Wars Story": "Rogue One: Uma História Star Wars",
+    "Pirates of the Caribbean: On Stranger Tides": "Piratas do Caribe: Navegando em Águas Misteriosas",
+    "Despicable Me 3": "Meu Malvado Favorito 3",
+    "Jumanji: Welcome to the Jungle": "Jumanji: Bem-vindo à Selva",
+    "Justice League": "Liga da Justiça",
+    "The Dark Knight": "Batman: O Cavaleiro das Trevas",
+    
+    # Filmes de Animação
+    "Finding Dory": "Procurando Dory",
+    "Zootopia": "Zootopia: Essa Cidade é o Bicho",
+    "Despicable Me 2": "Meu Malvado Favorito 2",
+    "The Grinch": "O Grinch",
+    "Finding Nemo": "Procurando Nemo",
+    "Shrek 2": "Shrek 2",
+    "The Secret Life of Pets": "A Vida Secreta dos Bichos",
+    "Inside Out": "Divertida Mente",
+    "The Incredibles": "Os Incríveis",
+    "Shrek the Third": "Shrek Terceiro",
+    "Shrek": "Shrek",
+    "Madagascar 3: Europe's Most Wanted": "Madagascar 3: Os Procurados",
+    "Monsters, Inc.": "Monstros S.A.",
+    "Up": "Up: Altas Aventuras",
+    "Spider-Man: Into the Spider-Verse": "Homem-Aranha no Aranhaverso",
+    
+    # Filmes Recentes
+    "Oppenheimer": "Oppenheimer",
+    "Guardians of the Galaxy Vol. 3": "Guardiões da Galáxia Vol. 3",
+    "Fast X": "Velozes e Furiosos 10",
+    "The Little Mermaid": "A Pequena Sereia",
+    "Elemental": "Elementos",
+    "Ant-Man and the Wasp: Quantumania": "Homem-Formiga e a Vespa: Quantumania",
+    "John Wick: Chapter 4": "John Wick 4: Baba Yaga",
+    "The Flash": "The Flash",
+    "Transformers: Rise of the Beasts": "Transformers: O Despertar das Feras",
+    "Spider-Man: Across the Spider-Verse": "Homem-Aranha: Através do Aranhaverso",
+    "Indiana Jones and the Dial of Destiny": "Indiana Jones e o Chamado do Destino",
+    "Mission: Impossible - Dead Reckoning Part One": "Missão: Impossível - Acerto de Contas Parte Um",
+    "The Marvels": "As Marvels",
+    "Wonka": "Wonka",
+    "Aquaman and the Lost Kingdom": "Aquaman e o Reino Perdido",
+    "The Hunger Games: The Ballad of Songbirds & Snakes": "Jogos Vorazes: A Cantiga dos Pássaros e das Serpentes",
+    
+    # Filmes Diversos
+    "The Lord of the Rings: The Two Towers": "O Senhor dos Anéis: As Duas Torres",
+    "The Lord of the Rings: The Fellowship of the Ring": "O Senhor dos Anéis: A Sociedade do Anel",
+    "The Matrix Reloaded": "Matrix Reloaded",
+    "The Twilight Saga: Breaking Dawn - Part 2": "A Saga Crepúsculo: Amanhecer - Parte 2",
+    "The Twilight Saga: New Moon": "A Saga Crepúsculo: Lua Nova",
+    "The Twilight Saga: Eclipse": "A Saga Crepúsculo: Eclipse",
+    "The Twilight Saga: Breaking Dawn - Part 1": "A Saga Crepúsculo: Amanhecer - Parte 1",
+    "The Hobbit: An Unexpected Journey": "O Hobbit: Uma Jornada Inesperada",
+    "The Hobbit: The Desolation of Smaug": "O Hobbit: A Desolação de Smaug",
+    "The Hobbit: The Battle of the Five Armies": "O Hobbit: A Batalha dos Cinco Exércitos",
+    "The Da Vinci Code": "O Código Da Vinci",
+    "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe": "As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa",
+    "The Passion of the Christ": "A Paixão de Cristo",
+    "The Exorcist": "O Exorcista",
+    "The Sound of Music": "A Noviça Rebelde",
+    "The Sting": "Um Golpe de Mestre",
+    "Butch Cassidy and the Sundance Kid": "Butch Cassidy e o Menino da Lua",
+    
+    # Filmes em Português (manter como estão)
+    "Cidade de Deus": "Cidade de Deus",
+    "Tropa de Elite": "Tropa de Elite",
+    "Central do Brasil": "Central do Brasil",
+    "O Auto da Compadecida": "O Auto da Compadecida",
+    "Lisbela e o Prisioneiro": "Lisbela e o Prisioneiro",
 }
 
 def traduzir_nome_filme(nome_original):
@@ -155,25 +259,28 @@ def traduzir_nome_filme(nome_original):
     return TRADUCOES_FILMES.get(nome_original, nome_original)
 
 # =========================
-# FUNÇÕES DE ANÁLISE AVANÇADA
+# FUNÇÕES DE ANÁLISE AVANÇADA (SEM scikit-learn)
 # =========================
-def calcular_tendencia_anual(df, coluna):
-    """Calcula tendência linear anual para uma coluna"""
+def calcular_tendencia_simples(df, coluna):
+    """Calcula tendência simples usando método estatístico básico"""
     anual = df.groupby('ano')[coluna].mean().reset_index()
     if len(anual) > 1:
-        X = anual['ano'].values.reshape(-1, 1)
-        y = anual[coluna].values
-        model = LinearRegression()
-        model.fit(X, y)
-        return model.coef_[0]  # Retorna a inclinação da tendência
+        # Método simples: compara primeiro e último ano
+        primeiro_valor = anual[coluna].iloc[0]
+        ultimo_valor = anual[coluna].iloc[-1]
+        periodo = anual['ano'].iloc[-1] - anual['ano'].iloc[0]
+        
+        if periodo > 0 and primeiro_valor != 0:
+            crescimento_percentual = ((ultimo_valor - primeiro_valor) / primeiro_valor) * 100
+            return crescimento_percentual / periodo  # Crescimento médio anual percentual
     return 0
 
-def prever_receita(modelo, features):
-    """Função simplificada para prever receita"""
-    try:
-        return modelo.predict(features)[0]
-    except:
-        return 0
+def calcular_correlacao_personalizada(df, col1, col2):
+    """Calcula correlação simples entre duas colunas"""
+    valid_data = df[[col1, col2]].dropna()
+    if len(valid_data) > 1:
+        return valid_data[col1].corr(valid_data[col2])
+    return 0
 
 # =========================
 # BARRA LATERAL AVANÇADA
@@ -257,7 +364,7 @@ df_filtrado["names"] = df_filtrado["names"].apply(traduzir_nome_filme)
 # CABEÇALHO E MÉTRICAS PRINCIPAIS
 # =========================
 st.markdown('<h1 class="main-header">🎬 CineAnalytics Pro</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Dashboard Avançado de Análise Cinematográfica com IA</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Dashboard Avançado de Análise Cinematográfica</p>', unsafe_allow_html=True)
 
 # Métricas principais expandidas
 if not df_filtrado.empty:
@@ -269,8 +376,8 @@ if not df_filtrado.empty:
     orcamento_medio = df_filtrado["budget_x"].mean()
     
     # Análises avançadas
-    tendencia_receita = calcular_tendencia_anual(df_filtrado, 'revenue')
-    tendencia_nota = calcular_tendencia_anual(df_filtrado, 'score')
+    tendencia_receita = calcular_tendencia_simples(df_filtrado, 'revenue')
+    tendencia_nota = calcular_tendencia_simples(df_filtrado, 'score')
     blockbusters = df_filtrado[df_filtrado['success_category'] == 'Blockbuster'].shape[0]
 else:
     receita_total = receita_media = nota_media = total_filmes = roi_medio = orcamento_medio = 0
@@ -337,7 +444,7 @@ st.markdown("---")
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📊 Dashboard Principal", 
     "🎭 Análise de Performance", 
-    "📈 Tendências & Previsões",
+    "📈 Tendências & Análises",
     "🔍 Insights Avançados",
     "🏆 Benchmarking",
     "📋 Base de Dados"
@@ -346,7 +453,6 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 with tab1:
     st.markdown('<div class="section-header">📊 Visão Geral do Mercado</div>', unsafe_allow_html=True)
     
-    # Análise de correlação em tempo real
     col1, col2 = st.columns(2)
     
     with col1:
@@ -421,7 +527,7 @@ with tab1:
         ))
         fig_evolucao.add_trace(go.Scatter(
             x=evolucao_anual['ano'], 
-            y=evolucao_anual['score'] * (evolucao_anual['revenue'].max() / evolucao_anual['score'].max()),
+            y=evolucao_anual['score'] * (evolucao_anual['revenue'].max() / max(evolucao_anual['score'].max(), 1)),
             name='Nota Média (escala ajustada)',
             line=dict(color='#FF6B6B', width=3)
         ))
@@ -444,50 +550,61 @@ with tab2:
         # Top filmes por ROI
         st.markdown("#### 💰 Melhores Investimentos (ROI)")
         top_roi = df_filtrado.nlargest(10, 'roi')[['names', 'roi', 'revenue', 'budget_x']]
-        top_roi['ROI'] = top_roi['roi'].apply(lambda x: f"{x:.1f}%")
-        top_roi['Receita'] = top_roi['revenue'].apply(lambda x: f"${x:,.0f}")
-        top_roi['Orçamento'] = top_roi['budget_x'].apply(lambda x: f"${x:,.0f}" if x > 0 else "N/A")
-        st.dataframe(top_roi[['names', 'ROI', 'Receita', 'Orçamento']].rename(
-            columns={'names': 'Filme'}), use_container_width=True)
+        if not top_roi.empty:
+            top_roi = top_roi.copy()
+            top_roi['ROI'] = top_roi['roi'].apply(lambda x: f"{x:.1f}%")
+            top_roi['Receita'] = top_roi['revenue'].apply(lambda x: f"${x:,.0f}")
+            top_roi['Orçamento'] = top_roi['budget_x'].apply(lambda x: f"${x:,.0f}" if x > 0 else "N/A")
+            st.dataframe(top_roi[['names', 'ROI', 'Receita', 'Orçamento']].rename(
+                columns={'names': 'Filme'}), use_container_width=True)
+        else:
+            st.info("Nenhum dado disponível para exibir")
     
     with col2:
         # Performance por categoria de sucesso
         st.markdown("#### 🏆 Distribuição por Categoria")
         success_dist = df_filtrado['success_category'].value_counts()
-        fig_pie_success = px.pie(
-            values=success_dist.values,
-            names=success_dist.index,
-            title="Distribuição de Categorias de Sucesso",
-            color_discrete_sequence=px.colors.qualitative.Set3
-        )
-        st.plotly_chart(fig_pie_success, use_container_width=True)
+        if not success_dist.empty:
+            fig_pie_success = px.pie(
+                values=success_dist.values,
+                names=success_dist.index,
+                title="Distribuição de Categorias de Sucesso",
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            st.plotly_chart(fig_pie_success, use_container_width=True)
+        else:
+            st.info("Nenhum dado disponível para exibir")
     
     # Análise de eficiência
     st.markdown("#### ⚡ Análise de Eficiência: Receita vs Orçamento")
-    fig_efficiency = px.scatter(
-        df_filtrado,
-        x="budget_x",
-        y="revenue",
-        color="success_category",
-        size="score",
-        title="Eficiência: Receita Gerada vs Orçamento Investido",
-        labels={"budget_x": "Orçamento", "revenue": "Receita"},
-        hover_data=["names", "roi"]
-    )
-    fig_efficiency.add_shape(
-        type="line", line=dict(dash="dash", color="white"),
-        x0=0, y0=0, x1=df_filtrado['budget_x'].max(), 
-        y1=df_filtrado['budget_x'].max()
-    )
-    st.plotly_chart(fig_efficiency, use_container_width=True)
+    if not df_filtrado.empty:
+        fig_efficiency = px.scatter(
+            df_filtrado,
+            x="budget_x",
+            y="revenue",
+            color="success_category",
+            size="score",
+            title="Eficiência: Receita Gerada vs Orçamento Investido",
+            labels={"budget_x": "Orçamento", "revenue": "Receita"},
+            hover_data=["names", "roi"]
+        )
+        # Adicionar linha de referência (y = x)
+        max_val = max(df_filtrado['budget_x'].max(), df_filtrado['revenue'].max())
+        fig_efficiency.add_shape(
+            type="line", line=dict(dash="dash", color="white"),
+            x0=0, y0=0, x1=max_val, y1=max_val
+        )
+        st.plotly_chart(fig_efficiency, use_container_width=True)
+    else:
+        st.info("Nenhum dado disponível para exibir")
 
 with tab3:
-    st.markdown('<div class="section-header">📈 Análise Preditiva e Tendências</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📈 Análise de Tendências</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("#### 🔮 Simulador de Performance")
+        st.markdown("#### 📊 Simulador de Performance")
         
         with st.form("simulador_performance"):
             st.markdown("##### Parâmetros do Filme")
@@ -505,12 +622,15 @@ with tab3:
                 mes_lancamento = st.selectbox("Mês de Lançamento", 
                                             range(1, 13),
                                             format_func=lambda x: datetime(2020, x, 1).strftime('%B'))
-                categoria_genero = st.selectbox("Gênero Principal", 
-                                              df_filtrado['genre'].value_counts().head(10).index.tolist())
+                if 'genre' in df_filtrado.columns and not df_filtrado.empty:
+                    generos_disponiveis = df_filtrado['genre'].value_counts().head(10).index.tolist()
+                    categoria_genero = st.selectbox("Gênero Principal", generos_disponiveis)
+                else:
+                    categoria_genero = st.selectbox("Gênero Principal", ["Ação", "Drama", "Comédia"])
             
             submitted = st.form_submit_button("🎯 Calcular Previsão")
             
-            if submitted:
+            if submitted and not df_filtrado.empty:
                 # Cálculo simplificado baseado em médias históricas
                 similar_movies = df_filtrado[
                     (df_filtrado['score'].between(nota_esperada-1, nota_esperada+1)) &
@@ -524,28 +644,35 @@ with tab3:
                     st.markdown(f'<div class="prediction-box">', unsafe_allow_html=True)
                     st.metric("💰 Receita Estimada", f"${receita_estimada:,.0f}")
                     st.metric("📈 ROI Estimado", f"{roi_estimado:.1f}%")
-                    st.metric("🎯 Categoria Prevista", 
-                             "Blockbuster" if receita_estimada > df_filtrado['revenue'].quantile(0.8) else "Alto Sucesso")
+                    
+                    # Determinar categoria
+                    if not df_filtrado.empty:
+                        limiar_blockbuster = df_filtrado['revenue'].quantile(0.8)
+                        categoria = "Blockbuster" if receita_estimada > limiar_blockbuster else "Alto Sucesso"
+                        st.metric("🎯 Categoria Prevista", categoria)
                     st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.warning("Não há filmes similares suficientes para fazer uma previsão precisa.")
     
     with col2:
-        st.markdown("#### 📊 Tendências Temporais Avançadas")
+        st.markdown("#### 📈 Tendências Temporais")
         
-        # Tendência de ROI ao longo do tempo
-        roi_temporal = df_filtrado.groupby('ano')['roi'].mean().reset_index()
-        fig_roi_trend = px.line(
-            roi_temporal,
-            x='ano',
-            y='roi',
-            title="📈 Evolução do ROI Médio Anual",
-            markers=True
-        )
-        fig_roi_trend.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
-        )
-        st.plotly_chart(fig_roi_trend, use_container_width=True)
+        if not df_filtrado.empty:
+            # Tendência de ROI ao longo do tempo
+            roi_temporal = df_filtrado.groupby('ano')['roi'].mean().reset_index()
+            fig_roi_trend = px.line(
+                roi_temporal,
+                x='ano',
+                y='roi',
+                title="📈 Evolução do ROI Médio Anual",
+                markers=True
+            )
+            fig_roi_trend.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white')
+            )
+            st.plotly_chart(fig_roi_trend, use_container_width=True)
 
 with tab4:
     st.markdown('<div class="section-header">🔍 Insights e Recomendações</div>', unsafe_allow_html=True)
@@ -553,32 +680,50 @@ with tab4:
     # Insights automáticos
     st.markdown("#### 💡 Insights Automáticos")
     
-    # Insight 1: Melhor custo-benefício
     if not df_filtrado.empty:
-        melhor_custo_beneficio = df_filtrado.loc[df_filtrado['roi'].idxmax()]
-        pior_custo_beneficio = df_filtrado.loc[df_filtrado[df_filtrado['roi'] > -100]['roi'].idxmin()]
+        # Insight 1: Melhor custo-benefício
+        df_roi_valido = df_filtrado[df_filtrado['roi'] > -100]
+        if not df_roi_valido.empty:
+            melhor_custo_beneficio = df_roi_valido.loc[df_roi_valido['roi'].idxmax()]
+            pior_custo_beneficio = df_roi_valido.loc[df_roi_valido['roi'].idxmin()]
+            
+            col_i1, col_i2 = st.columns(2)
+            
+            with col_i1:
+                st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
+                st.markdown(f"##### 🏆 Melhor Investimento")
+                st.markdown(f"**{melhor_custo_beneficio['names']}**")
+                st.markdown(f"ROI: **{melhor_custo_beneficio['roi']:.1f}%**")
+                st.markdown(f"Nota: **{melhor_custo_beneficio['score']:.1f}**")
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            with col_i2:
+                st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
+                st.markdown(f"##### ⚠️ Investimento de Risco")
+                st.markdown(f"**{pior_custo_beneficio['names']}**")
+                st.markdown(f"ROI: **{pior_custo_beneficio['roi']:.1f}%**")
+                st.markdown(f"Nota: **{pior_custo_beneficio['score']:.1f}**")
+                st.markdown('</div>', unsafe_allow_html=True)
         
-        col_i1, col_i2 = st.columns(2)
+        # Análise de correlações interessantes
+        st.markdown("#### 🔗 Correlações Interessantes")
+        col_c1, col_c2, col_c3 = st.columns(3)
         
-        with col_i1:
-            st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
-            st.markdown(f"##### 🏆 Melhor Investimento")
-            st.markdown(f"**{melhor_custo_beneficio['names']}**")
-            st.markdown(f"ROI: **{melhor_custo_beneficio['roi']:.1f}%**")
-            st.markdown(f"Nota: **{melhor_custo_beneficio['score']:.1f}**")
-            st.markdown('</div>', unsafe_allow_html=True)
+        with col_c1:
+            corr_nota_receita = calcular_correlacao_personalizada(df_filtrado, 'score', 'revenue')
+            st.metric("Nota vs Receita", f"{corr_nota_receita:.2f}")
         
-        with col_i2:
-            st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
-            st.markdown(f"##### ⚠️ Investimento de Risco")
-            st.markdown(f"**{pior_custo_beneficio['names']}**")
-            st.markdown(f"ROI: **{pior_custo_beneficio['roi']:.1f}%**")
-            st.markdown(f"Nota: **{pior_custo_beneficio['score']:.1f}**")
-            st.markdown('</div>', unsafe_allow_html=True)
+        with col_c2:
+            corr_orcamento_receita = calcular_correlacao_personalizada(df_filtrado, 'budget_x', 'revenue')
+            st.metric("Orçamento vs Receita", f"{corr_orcamento_receita:.2f}")
+        
+        with col_c3:
+            corr_nota_roi = calcular_correlacao_personalizada(df_filtrado, 'score', 'roi')
+            st.metric("Nota vs ROI", f"{corr_nota_roi:.2f}")
     
     # Análise de sazonalidade
     st.markdown("#### 📅 Análise de Sazonalidade")
-    if 'mes' in df_filtrado.columns:
+    if 'mes' in df_filtrado.columns and not df_filtrado.empty:
         sazonalidade = df_filtrado.groupby('mes').agg({
             'revenue': 'mean',
             'score': 'mean',
@@ -609,57 +754,172 @@ with tab5:
     with col1:
         # Benchmark por gênero
         st.markdown("#### 🎭 Performance por Gênero")
-        genre_benchmark = df_filtrado.groupby('genre').agg({
-            'revenue': 'mean',
-            'score': 'mean',
-            'roi': 'mean',
-            'names': 'count'
-        }).round(2).nlargest(10, 'revenue')
-        
-        st.dataframe(genre_benchmark.rename(columns={
-            'revenue': 'Receita Média',
-            'score': 'Nota Média',
-            'roi': 'ROI Médio',
-            'names': 'Nº Filmes'
-        }), use_container_width=True)
+        if 'genre' in df_filtrado.columns and not df_filtrado.empty:
+            genre_benchmark = df_filtrado.groupby('genre').agg({
+                'revenue': 'mean',
+                'score': 'mean',
+                'roi': 'mean',
+                'names': 'count'
+            }).round(2).nlargest(10, 'revenue')
+            
+            st.dataframe(genre_benchmark.rename(columns={
+                'revenue': 'Receita Média',
+                'score': 'Nota Média',
+                'roi': 'ROI Médio',
+                'names': 'Nº Filmes'
+            }), use_container_width=True)
+        else:
+            st.info("Dados de gênero não disponíveis")
     
     with col2:
         # Comparação de décadas
         st.markdown("#### 📊 Evolução por Década")
-        df_filtrado['decada'] = (df_filtrado['ano'] // 10) * 10
-        decada_stats = df_filtrado.groupby('decada').agg({
-            'revenue': 'mean',
-            'score': 'mean',
-            'budget_x': 'mean'
-        }).reset_index()
-        
-        fig_decada = px.line(
-            decada_stats,
-            x='decada',
-            y=['revenue', 'budget_x'],
-            title="Evolução da Receita e Orçamento por Década",
-            markers=True
-        )
-        st.plotly_chart(fig_decada, use_container_width=True)
+        if not df_filtrado.empty:
+            df_filtrado_copy = df_filtrado.copy()
+            df_filtrado_copy['decada'] = (df_filtrado_copy['ano'] // 10) * 10
+            decada_stats = df_filtrado_copy.groupby('decada').agg({
+                'revenue': 'mean',
+                'score': 'mean',
+                'budget_x': 'mean'
+            }).reset_index()
+            
+            fig_decada = px.line(
+                decada_stats,
+                x='decada',
+                y=['revenue', 'budget_x'],
+                title="Evolução da Receita e Orçamento por Década",
+                markers=True
+            )
+            fig_decada.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white')
+            )
+            st.plotly_chart(fig_decada, use_container_width=True)
 
 with tab6:
     st.markdown('<div class="section-header">🔍 Base de Dados Completa</div>', unsafe_allow_html=True)
     
-    # Sistema de busca e filtros (similar ao anterior, mas expandido)
+    # Sistema de busca e filtros
     col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
     with col_f1:
-        search_term = st.text_input("🔍 Buscar filme:", placeholder="Digite o nome do filme...")
+        search_term = st.text_input("🔍 Buscar filme:", placeholder="Digite o nome do filme...", key="search_db")
     with col_f2:
         sort_by = st.selectbox(
             "Ordenar por:",
             ["Receita", "Pontuação", "ROI", "Orçamento", "Ano de Lançamento"],
-            index=0
+            index=0,
+            key="sort_db"
         )
     with col_f3:
-        resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0)
+        resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0, key="pagination_db")
     
-    # Preparar dados para exibição (similar ao anterior, mas com mais colunas)
-    # ... (código similar ao tab4 do código anterior, mas com colunas adicionais como ROI, Orçamento, etc.)
+    # Preparar dados para exibição
+    df_display = df_filtrado.copy().rename(columns={
+        "names": "Nome do Filme",
+        "orig_lang": "Idioma Original",
+        "revenue": "Receita",
+        "score": "Pontuação",
+        "ano": "Ano de Lançamento",
+        "date_x": "Data de Lançamento",
+        "country": "País de Origem",
+        "genre": "Gênero",
+        "budget_x": "Orçamento",
+        "roi": "ROI",
+        "success_category": "Categoria Sucesso"
+    })
+
+    # Formata a data no padrão brasileiro (dd/mm/aaaa)
+    if "Data de Lançamento" in df_display.columns:
+        df_display["Data de Lançamento"] = pd.to_datetime(
+            df_display["Data de Lançamento"], errors="coerce"
+        ).dt.strftime("%d/%m/%Y")
+
+    # Formata valores numéricos
+    df_display["Receita_Original"] = df_display["Receita"]
+    df_display["Receita"] = df_display["Receita"].apply(
+        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
+    )
+
+    df_display["Pontuação_Original"] = df_display["Pontuação"]
+    df_display["Pontuação"] = df_display["Pontuação"].apply(
+        lambda x: f"{x:.1f}" if pd.notnull(x) else "N/A"
+    )
+
+    df_display["ROI_Original"] = df_display["ROI"]
+    df_display["ROI"] = df_display["ROI"].apply(
+        lambda x: f"{x:.1f}%" if pd.notnull(x) else "N/A"
+    )
+
+    df_display["Orçamento_Original"] = df_display["Orçamento"]
+    df_display["Orçamento"] = df_display["Orçamento"].apply(
+        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
+    )
+
+    # Filtro de busca
+    if search_term:
+        df_display = df_display[
+            df_display["Nome do Filme"].str.contains(search_term, case=False, na=False) |
+            df_display["Gênero"].str.contains(search_term, case=False, na=False) |
+            df_display["País de Origem"].str.contains(search_term, case=False, na=False)
+        ]
+
+    # Ordenação
+    sort_map = {
+        "Receita": "Receita_Original",
+        "Pontuação": "Pontuação_Original", 
+        "ROI": "ROI_Original",
+        "Orçamento": "Orçamento_Original",
+        "Ano de Lançamento": "Ano de Lançamento"
+    }
+    
+    if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
+        ascending = sort_by in ["Ano de Lançamento"]  # Ajuste conforme necessidade
+        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=ascending)
+
+    # Colunas a exibir
+    colunas_para_mostrar = [
+        "Nome do Filme", "Gênero", "Idioma Original", "País de Origem",
+        "Pontuação", "Receita", "Orçamento", "ROI", "Categoria Sucesso", 
+        "Ano de Lançamento", "Data de Lançamento"
+    ]
+
+    # Sistema de paginação
+    total_resultados = len(df_display)
+    if total_resultados > 0:
+        total_paginas = (total_resultados + resultados_por_pagina - 1) // resultados_por_pagina
+        pagina_atual = st.number_input("Página:", min_value=1, max_value=max(total_paginas, 1), value=1)
+        
+        inicio = (pagina_atual - 1) * resultados_por_pagina
+        fim = inicio + resultados_por_pagina
+        
+        df_paginado = df_display.iloc[inicio:fim]
+        
+        # Exibe informações da paginação
+        st.caption(f"Mostrando {inicio + 1}-{min(fim, total_resultados)} de {total_resultados} resultados")
+        
+        # Exibe a tabela formatada
+        st.dataframe(
+            df_paginado[colunas_para_mostrar],
+            use_container_width=True,
+            height=400,
+            hide_index=True
+        )
+        
+        # Botão para exportar dados
+        col_export1, col_export2 = st.columns([3, 1])
+        with col_export2:
+            if st.button("📥 Exportar Dados para CSV", use_container_width=True):
+                csv = df_display[colunas_para_mostrar].to_csv(index=False)
+                st.download_button(
+                    label="Baixar CSV",
+                    data=csv,
+                    file_name="filmes_analise_completa.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+    else:
+        st.warning("🎭 Nenhum filme encontrado com os filtros aplicados.")
 
 # =========================
 # RODAPÉ
@@ -667,7 +927,7 @@ with tab6:
 st.markdown("---")
 st.markdown(
     f"<div style='text-align: center; color: #666;'>"
-    f"📊 Dashboard CineAnalytics Pro • Análise Avançada com IA • "
+    f"📊 Dashboard CineAnalytics Pro • Análise Avançada • "
     f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')} • "
     f"💡 {len(df_filtrado):,} filmes analisados"
     f"</div>",
