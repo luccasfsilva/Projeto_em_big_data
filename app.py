@@ -6,6 +6,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import warnings
+# =========================
+# ADIÇÃO DO NOVO IMPORT AQUI
+# =========================
+from googletrans import Translator
+# =========================
 warnings.filterwarnings('ignore')
 
 # =========================
@@ -388,25 +393,25 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.metric("💰 Receita Total", f"${receita_total:,.0f}", 
-             f"{tendencia_receita:+.1f}%/ano" if tendencia_receita != 0 else "N/A")
+              f"{tendencia_receita:+.1f}%/ano" if tendencia_receita != 0 else "N/A")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.metric("📊 Receita Média", f"${receita_media:,.0f}", 
-             help="Receita média por filme")
+              help="Receita média por filme")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col3:
     st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.metric("⭐ Nota Média", f"{nota_media:.2f}" if pd.notna(nota_media) else "—",
-             f"{tendencia_nota:+.2f}/ano" if tendencia_nota != 0 else "N/A")
+              f"{tendencia_nota:+.2f}/ano" if tendencia_nota != 0 else "N/A")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col4:
     st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.metric("🎭 Total de Filmes", f"{total_filmes:,}", 
-             help="Número total de filmes que correspondem aos filtros")
+              help="Número total de filmes que correspondem aos filtros")
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Segunda linha de métricas avançadas
@@ -414,26 +419,26 @@ col5, col6, col7, col8 = st.columns(4)
 with col5:
     st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
     st.metric("📈 ROI Médio", f"{roi_medio:.1f}%", 
-             help="Retorno sobre Investimento médio")
+              help="Retorno sobre Investimento médio")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col6:
     st.markdown('<div class="metric-card">', unsafe_allow_html=True)
     st.metric("💸 Orçamento Médio", f"${orcamento_medio:,.0f}" if orcamento_medio > 0 else "N/A",
-             help="Orçamento médio dos filmes")
+              help="Orçamento médio dos filmes")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col7:
     st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
     st.metric("🏆 Blockbusters", f"{blockbusters:,}",
-             help="Filmes na categoria Blockbuster")
+              help="Filmes na categoria Blockbuster")
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col8:
     st.markdown('<div class="metric-card-danger">', unsafe_allow_html=True)
     eficiencia = receita_total / max(orcamento_medio * total_filmes, 1)
     st.metric("⚡ Eficiência", f"{eficiencia:.2f}x",
-             help="Relação Receita/Orçamento")
+              help="Relação Receita/Orçamento")
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
@@ -612,16 +617,16 @@ with tab3:
             
             with col_s1:
                 orcamento_simulado = st.number_input("Orçamento (USD)", 
-                                                   min_value=1000000, 
-                                                   max_value=500000000,
-                                                   value=100000000,
-                                                   step=1000000)
+                                                     min_value=1000000, 
+                                                     max_value=500000000,
+                                                     value=100000000,
+                                                     step=1000000)
                 nota_esperada = st.slider("Nota IMDb Esperada", 0.0, 10.0, 7.0, 0.1)
             
             with col_s2:
                 mes_lancamento = st.selectbox("Mês de Lançamento", 
-                                            range(1, 13),
-                                            format_func=lambda x: datetime(2020, x, 1).strftime('%B'))
+                                              range(1, 13),
+                                              format_func=lambda x: datetime(2020, x, 1).strftime('%B'))
                 if 'genre' in df_filtrado.columns and not df_filtrado.empty:
                     generos_disponiveis = df_filtrado['genre'].value_counts().head(10).index.tolist()
                     categoria_genero = st.selectbox("Gênero Principal", generos_disponiveis)
@@ -796,140 +801,15 @@ with tab5:
                 font=dict(color='white')
             )
             st.plotly_chart(fig_decada, use_container_width=True)
-
+            
 with tab6:
-    st.markdown('<div class="section-header">🔍 Base de Dados Completa</div>', unsafe_allow_html=True)
-    
-    # Sistema de busca e filtros
-    col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
-    with col_f1:
-        search_term = st.text_input("🔍 Buscar filme:", placeholder="Digite o nome do filme...", key="search_db")
-    with col_f2:
-        sort_by = st.selectbox(
-            "Ordenar por:",
-            ["Receita", "Pontuação", "ROI", "Orçamento", "Ano de Lançamento"],
-            index=0,
-            key="sort_db"
-        )
-    with col_f3:
-        resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0, key="pagination_db")
-    
-    # Preparar dados para exibição
-    df_display = df_filtrado.copy().rename(columns={
-        "names": "Nome do Filme",
-        "orig_lang": "Idioma Original",
-        "revenue": "Receita",
-        "score": "Pontuação",
-        "ano": "Ano de Lançamento",
-        "date_x": "Data de Lançamento",
-        "country": "País de Origem",
-        "genre": "Gênero",
-        "budget_x": "Orçamento",
-        "roi": "ROI",
-        "success_category": "Categoria Sucesso"
-    })
-
-    # Formata a data no padrão brasileiro (dd/mm/aaaa)
-    if "Data de Lançamento" in df_display.columns:
-        df_display["Data de Lançamento"] = pd.to_datetime(
-            df_display["Data de Lançamento"], errors="coerce"
-        ).dt.strftime("%d/%m/%Y")
-
-    # Formata valores numéricos
-    df_display["Receita_Original"] = df_display["Receita"]
-    df_display["Receita"] = df_display["Receita"].apply(
-        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
-    )
-
-    df_display["Pontuação_Original"] = df_display["Pontuação"]
-    df_display["Pontuação"] = df_display["Pontuação"].apply(
-        lambda x: f"{x:.1f}" if pd.notnull(x) else "N/A"
-    )
-
-    df_display["ROI_Original"] = df_display["ROI"]
-    df_display["ROI"] = df_display["ROI"].apply(
-        lambda x: f"{x:.1f}%" if pd.notnull(x) else "N/A"
-    )
-
-    df_display["Orçamento_Original"] = df_display["Orçamento"]
-    df_display["Orçamento"] = df_display["Orçamento"].apply(
-        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
-    )
-
-    # Filtro de busca
-    if search_term:
-        df_display = df_display[
-            df_display["Nome do Filme"].str.contains(search_term, case=False, na=False) |
-            df_display["Gênero"].str.contains(search_term, case=False, na=False) |
-            df_display["País de Origem"].str.contains(search_term, case=False, na=False)
-        ]
-
-    # Ordenação
-    sort_map = {
-        "Receita": "Receita_Original",
-        "Pontuação": "Pontuação_Original", 
-        "ROI": "ROI_Original",
-        "Orçamento": "Orçamento_Original",
-        "Ano de Lançamento": "Ano de Lançamento"
-    }
-    
-    if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
-        ascending = sort_by in ["Ano de Lançamento"]  # Ajuste conforme necessidade
-        df_display = df_display.sort_values(by=sort_map[sort_by], ascending=ascending)
-
-    # Colunas a exibir
-    colunas_para_mostrar = [
-        "Nome do Filme", "Gênero", "Idioma Original", "País de Origem",
-        "Pontuação", "Receita", "Orçamento", "ROI", "Categoria Sucesso", 
-        "Ano de Lançamento", "Data de Lançamento"
-    ]
-
-    # Sistema de paginação
-    total_resultados = len(df_display)
-    if total_resultados > 0:
-        total_paginas = (total_resultados + resultados_por_pagina - 1) // resultados_por_pagina
-        pagina_atual = st.number_input("Página:", min_value=1, max_value=max(total_paginas, 1), value=1)
-        
-        inicio = (pagina_atual - 1) * resultados_por_pagina
-        fim = inicio + resultados_por_pagina
-        
-        df_paginado = df_display.iloc[inicio:fim]
-        
-        # Exibe informações da paginação
-        st.caption(f"Mostrando {inicio + 1}-{min(fim, total_resultados)} de {total_resultados} resultados")
-        
-        # Exibe a tabela formatada
-        st.dataframe(
-            df_paginado[colunas_para_mostrar],
-            use_container_width=True,
-            height=400,
-            hide_index=True
-        )
-        
-        # Botão para exportar dados
-        col_export1, col_export2 = st.columns([3, 1])
-        with col_export2:
-            if st.button("📥 Exportar Dados para CSV", use_container_width=True):
-                csv = df_display[colunas_para_mostrar].to_csv(index=False)
-                st.download_button(
-                    label="Baixar CSV",
-                    data=csv,
-                    file_name="filmes_analise_completa.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
+    st.markdown('<div class="section-header">📋 Base de Dados Completa</div>', unsafe_allow_html=True)
+    if not df_filtrado.empty:
+        st.dataframe(df_filtrado.style.format({
+            "revenue": "${:,.0f}",
+            "budget_x": "${:,.0f}",
+            "score": "{:.2f}",
+            "roi": "{:.1f}%"
+        }), use_container_width=True)
     else:
-        st.warning("🎭 Nenhum filme encontrado com os filtros aplicados.")
-
-# =========================
-# RODAPÉ
-# =========================
-st.markdown("---")
-st.markdown(
-    f"<div style='text-align: center; color: #666;'>"
-    f"📊 Dashboard CineAnalytics Pro • Análise Avançada • "
-    f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')} • "
-    f"💡 {len(df_filtrado):,} filmes analisados"
-    f"</div>",
-    unsafe_allow_html=True
-)
+        st.warning("O DataFrame está vazio. Por favor, ajuste os filtros.")
