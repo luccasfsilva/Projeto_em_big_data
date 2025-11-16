@@ -6,7 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import warnings
-from googletrans import Translator # Import da biblioteca de tradução
+
 warnings.filterwarnings('ignore')
 
 # Inicializar o tradutor globalmente
