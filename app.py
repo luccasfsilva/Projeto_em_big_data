@@ -98,7 +98,7 @@ st.markdown("""
 # =========================
 # DICIONÁRIO DE TRADUÇÃO DOS FILMES
 # =========================
-# ATENÇÃO: COLOQUE A LISTA COMPLETA DO SEU DICIONÁRIO AQUI
+# ATENÇÃO: PREENCHA O DICIONÁRIO COMPLETO AQUI.
 TRADUCOES_FILMES = {
     # Filmes Populares
     "Avatar: The Way of Water": "Avatar: O Caminho da Água",
@@ -116,7 +116,92 @@ TRADUCOES_FILMES = {
     "Top Gun: Maverick": "Top Gun: Maverick",
     "Barbie": "Barbie",
     "The Super Mario Bros. Movie": "Super Mario Bros.: O Filme",
-    # ... (ADICIONE O RESTANTE DO SEU DICIONÁRIO AQUI)
+    "Avengers: Age of Ultron": "Vingadores: Era de Ultron",
+    "Black Panther": "Pantera Negra",
+    "Harry Potter and the Deathly Hallows: Part 2": "Harry Potter e as Relíquias da Morte: Parte 2",
+    "Star Wars: Episode VIII - The Last Jedi": "Star Wars: Episódio VIII - Os Últimos Jedi",
+    "Jurassic World: Fallen Kingdom": "Mundo Jurássico: Reino Ameaçado",
+    "Frozen": "Frozen: Uma Aventura Congelante",
+    "Beauty and the Beast": "A Bela e a Fera",
+    "Incredibles 2": "Os Incríveis 2",
+    "The Fate of the Furious": "O Destino de Velozes e Furiosos",
+    "Iron Man 3": "Homem de Ferro 3",
+    "Minions": "Minions",
+    "Captain America: Civil War": "Capitão América: Guerra Civil",
+    "Aquaman": "Aquaman",
+    "The Lord of the Rings: The Return of the King": "O Senhor dos Anéis: O Retorno do Rei",
+    "Spider-Man: Far From Home": "Homem-Aranha: Longe de Casa",
+    # Filmes de Ação e Aventura
+    "Transformers: Dark of the Moon": "Transformers: O Lado Oculto da Lua",
+    "Skyfall": "007 - Operação Skyfall",
+    "Transformers: Age of Extinction": "Transformers: A Era da Extinção",
+    "The Dark Knight Rises": "Batman: O Cavaleiro das Trevas Ressurge",
+    "Toy Story 4": "Toy Story 4",
+    "Toy Story 3": "Toy Story 3",
+    "Pirates of the Caribbean: Dead Man's Chest": "Piratas do Caribe: O Baú da Morte",
+    "Rogue One: A Star Wars Story": "Rogue One: Uma História Star Wars",
+    "Pirates of the Caribbean: On Stranger Tides": "Piratas do Caribe: Navegando em Águas Misteriosas",
+    "Despicable Me 3": "Meu Malvado Favorito 3",
+    "Jumanji: Welcome to the Jungle": "Jumanji: Bem-vindo à Selva",
+    "Justice League": "Liga da Justiça",
+    "The Dark Knight": "Batman: O Cavaleiro das Trevas",
+    # Filmes de Animação
+    "Finding Dory": "Procurando Dory",
+    "Zootopia": "Zootopia: Essa Cidade é o Bicho",
+    "Despicable Me 2": "Meu Malvado Favorito 2",
+    "The Grinch": "O Grinch",
+    "Finding Nemo": "Procurando Nemo",
+    "Shrek 2": "Shrek 2",
+    "The Secret Life of Pets": "A Vida Secreta dos Bichos",
+    "Inside Out": "Divertida Mente",
+    "The Incredibles": "Os Incríveis",
+    "Shrek the Third": "Shrek Terceiro",
+    "Shrek": "Shrek",
+    "Madagascar 3: Europe's Most Wanted": "Madagascar 3: Os Procurados",
+    "Monsters, Inc.": "Monstros S.A.",
+    "Up": "Up: Altas Aventuras",
+    "Spider-Man: Into the Spider-Verse": "Homem-Aranha no Aranhaverso",
+    # Filmes Recentes
+    "Oppenheimer": "Oppenheimer",
+    "Guardians of the Galaxy Vol. 3": "Guardiões da Galáxia Vol. 3",
+    "Fast X": "Velozes e Furiosos 10",
+    "The Little Mermaid": "A Pequena Sereia",
+    "Elemental": "Elementos",
+    "Ant-Man and the Wasp: Quantumania": "Homem-Formiga e a Vespa: Quantumania",
+    "John Wick: Chapter 4": "John Wick 4: Baba Yaga",
+    "The Flash": "The Flash",
+    "Transformers: Rise of the Beasts": "Transformers: O Despertar das Feras",
+    "Spider-Man: Across the Spider-Verse": "Homem-Aranha: Através do Aranhaverso",
+    "Indiana Jones and the Dial of Destiny": "Indiana Jones e o Chamado do Destino",
+    "Mission: Impossible - Dead Reckoning Part One": "Missão: Impossível - Acerto de Contas Parte Um",
+    "The Marvels": "As Marvels",
+    "Wonka": "Wonka",
+    "Aquaman and the Lost Kingdom": "Aquaman e o Reino Perdido",
+    "The Hunger Games: The Ballad of Songbirds & Snakes": "Jogos Vorazes: A Cantiga dos Pássaros e das Serpentes",
+    # Filmes Diversos
+    "The Lord of the Rings: The Two Towers": "O Senhor dos Anéis: As Duas Torres",
+    "The Lord of the Rings: The Fellowship of the Ring": "O Senhor dos Anéis: A Sociedade do Anel",
+    "The Matrix Reloaded": "Matrix Reloaded",
+    "The Twilight Saga: Breaking Dawn - Part 2": "A Saga Crepúsculo: Amanhecer - Parte 2",
+    "The Twilight Saga: New Moon": "A Saga Crepúsculo: Lua Nova",
+    "The Twilight Saga: Eclipse": "A Saga Crepúsculo: Eclipse",
+    "The Twilight Saga: Breaking Dawn - Part 1": "A Saga Crepúsculo: Amanhecer - Parte 1",
+    "The Hobbit: An Unexpected Journey": "O Hobbit: Uma Jornada Inesperada",
+    "The Hobbit: The Desolation of Smaug": "O Hobbit: A Desolação de Smaug",
+    "The Hobbit: The Battle of the Five Armies": "O Hobbit: A Batalha dos Cinco Exércitos",
+    "The Da Vinci Code": "O Código Da Vinci",
+    "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe": "As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa",
+    "The Passion of the Christ": "A Paixão de Cristo",
+    "The Exorcist": "O Exorcista",
+    "The Sound of Music": "A Noviça Rebelde",
+    "The Sting": "Um Golpe de Mestre",
+    "Butch Cassidy and the Sundance Kid": "Butch Cassidy e o Menino da Lua",
+    # Filmes em Português (manter como estão)
+    "Cidade de Deus": "Cidade de Deus",
+    "Tropa de Elite": "Tropa de Elite",
+    "Central do Brasil": "Central do Brasil",
+    "O Auto da Compadecida": "O Auto da Compadecida",
+    "Lisbela e o Prisioneiro": "Lisbela e o Prisioneiro",
 }
 
 # =========================
@@ -147,7 +232,6 @@ def traduzir_nome_filme_avancado(nome_original):
     
     # 2. Se não estiver no dicionário, tenta a tradução dinâmica (com cache)
     return traduzir_dinamico(nome_original)
-
 
 # =========================
 # CARREGAR E PREPROCESSAR DADOS
