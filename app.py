@@ -9,8 +9,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-# Inicializar o tradutor globalmente
-translator = Translator()
+
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
