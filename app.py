@@ -6,11 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import warnings
-# =========================
-# ADIÇÃO DO NOVO IMPORT AQUI
-# =========================
-from googletrans import Translator
-# =========================
+from googletrans import Translator # Novo import
 warnings.filterwarnings('ignore')
 
 # =========================
