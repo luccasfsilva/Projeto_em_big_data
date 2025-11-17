@@ -386,7 +386,7 @@ df_filtrado["names"] = df_filtrado["names"].apply(traduzir_nome_filme_avancado)
 # =========================
 # CABEÇALHO E MÉTRICAS PRINCIPAIS
 # =========================
-st.markdown('<h1 class="main-header">🎬 CineAnalytics Pro</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🎬 CineAnalytics </h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Dashboard Avançado de Análise Cinematográfica</p>', unsafe_allow_html=True)
 
 # Métricas principais expandidas
