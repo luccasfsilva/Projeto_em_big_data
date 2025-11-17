@@ -9,7 +9,8 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-
+# Inicializar o tradutor globalmente
+translator = Translator()
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
@@ -431,7 +432,34 @@ with col4:
               help="Número total de filmes que correspondem aos filtros")
     st.markdown('</div>', unsafe_allow_html=True)
 
+# Segunda linha de métricas avançadas
+col5, col6, col7, col8 = st.columns(4)
+with col5:
+    st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
+    st.metric("📈 ROI Médio", f"{roi_medio:.1f}%", 
+              help="Retorno sobre Investimento médio")
+    st.markdown('</div>', unsafe_allow_html=True)
 
+with col6:
+    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+    st.metric("💸 Orçamento Médio", f"${orcamento_medio:,.0f}" if orcamento_medio > 0 else "N/A",
+              help="Orçamento médio dos filmes")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col7:
+    st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
+    st.metric("🏆 Blockbusters", f"{blockbusters:,}",
+              help="Filmes na categoria Blockbuster")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col8:
+    st.markdown('<div class="metric-card-danger">', unsafe_allow_html=True)
+    eficiencia = receita_total / max(orcamento_medio * total_filmes, 1)
+    st.metric("⚡ Eficiência", f"{eficiencia:.2f}x",
+              help="Relação Receita/Orçamento")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown("---")
 
 # =========================
 # SISTEMA DE ABAS AVANÇADO
@@ -718,21 +746,21 @@ with tab4:
     
     # Análise de sazonalidade
     st.markdown("#### 📅 Análise de Sazonalidade")
-if 'mes' in df_filtrado.columns and not df_filtrado.empty:
-    sazonalidade = df_filtrado.groupby('mes').agg({
-        'revenue': 'mean',
-        'score': 'mean',
-        'roi': 'mean'
-    }).reset_index()
-    
-    fig_sazonal = go.Figure()
-    fig_sazonal.add_trace(go.Bar(
-        x=['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-        y=sazonalidade['revenue'],
-        name='Receita Média',
-        marker_color='#4ECDC4'
-    ))
+    if 'mes' in df_filtrado.columns and not df_filtrado.empty:
+        sazonalidade = df_filtrado.groupby('mes').agg({
+            'revenue': 'mean',
+            'score': 'mean',
+            'roi': 'mean'
+        }).reset_index()
+        
+        fig_sazonal = go.Figure()
+        fig_sazonal.add_trace(go.Bar(
+            x=['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec'],
+            y=sazonalidade['revenue'],
+            name='Receita Média',
+            marker_color='#4ECDC4'
+        ))
         fig_sazonal.update_layout(
             title="Receita Média por Mês",
             plot_bgcolor='rgba(0,0,0,0)',
