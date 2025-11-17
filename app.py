@@ -1,18 +1,16 @@
 # app.py
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
-import warnings
-warnings.filterwarnings('ignore')
+from streamlit_option_menu import option_menu
 
 # =========================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
 st.set_page_config(
-    page_title="CineAnalytics Pro",
+    page_title="CineAnalytics",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -25,7 +23,7 @@ st.markdown("""
 <style>
     .main-header {
         font-size: 3.5rem;
-        background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1, #FFA726);
+        background: linear-gradient(90deg, #FF6B6B, #4ECDC4, #45B7D1);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
@@ -47,24 +45,6 @@ st.markdown("""
         color: white;
         height: 100%;
     }
-    .metric-card-warning {
-        background: linear-gradient(135deg, #2c3e50, #34495e);
-        padding: 1.5rem;
-        border-radius: 15px;
-        border-left: 5px solid #FFA726;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        color: white;
-        height: 100%;
-    }
-    .metric-card-danger {
-        background: linear-gradient(135deg, #2c3e50, #34495e);
-        padding: 1.5rem;
-        border-radius: 15px;
-        border-left: 5px solid #FF6B6B;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        color: white;
-        height: 100%;
-    }
     .section-header {
         font-size: 1.5rem;
         color: #4ECDC4;
@@ -72,64 +52,45 @@ st.markdown("""
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #34495e;
     }
-    .insight-box {
-        background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
-        padding: 1.5rem;
-        border-radius: 10px;
-        border-left: 4px solid #FFA726;
-        margin: 1rem 0;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
     }
-    .prediction-box {
-        background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
-        padding: 1.5rem;
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: #2c3e50;
+        border-radius: 8px 8px 0px 0px;
+        gap: 1px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        color: white;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #4ECDC4;
+        color: #2c3e50;
+        font-weight: bold;
+    }
+    .info-box {
+        background-color: #1a1a1a;
+        padding: 1rem;
         border-radius: 10px;
-        border: 2px solid #4ECDC4;
+        border-left: 4px solid #FF6B6B;
         margin: 1rem 0;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# CARREGAR E PREPROCESSAR DADOS
+# CARREGAR DADOS
 # =========================
 @st.cache_data
 def carregar_dados():
     CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
     try:
         df = pd.read_csv(CSV_URL, parse_dates=['date_x'])
-        
-        # Limpeza e transformação mais robusta
         df["revenue"] = pd.to_numeric(df.get("revenue"), errors="coerce").fillna(0)
         df["score"] = pd.to_numeric(df.get("score"), errors="coerce")
-        df["budget_x"] = pd.to_numeric(df.get("budget_x"), errors="coerce").fillna(0)
-        
-        # Extrair ano e mês
         df["ano"] = df["date_x"].dt.year.fillna(0).astype(int)
-        df["mes"] = df["date_x"].dt.month.fillna(0).astype(int)
-        
-        # Calcular ROI (Return on Investment)
-        df["roi"] = np.where(
-            df["budget_x"] > 0,
-            (df["revenue"] - df["budget_x"]) / df["budget_x"] * 100,
-            0
-        )
-        
-        # Categorizar sucesso
-        conditions = [
-            df['revenue'] >= df['revenue'].quantile(0.8),
-            df['revenue'] >= df['revenue'].quantile(0.6),
-            df['revenue'] >= df['revenue'].quantile(0.4),
-            df['revenue'] < df['revenue'].quantile(0.4)
-        ]
-        choices = ['Blockbuster', 'High', 'Medium', 'Low']
-        df['success_category'] = np.select(conditions, choices, default='Low')
-        
-        # Popularidade normalizada
-        if 'vote_count' in df.columns:
-            df['popularity_norm'] = (df['vote_count'] - df['vote_count'].min()) / (df['vote_count'].max() - df['vote_count'].min())
-        
         return df
     except Exception as e:
         st.error(f"❌ Erro ao carregar o CSV.\nDetalhe: {e}")
@@ -259,34 +220,10 @@ def traduzir_nome_filme(nome_original):
     return TRADUCOES_FILMES.get(nome_original, nome_original)
 
 # =========================
-# FUNÇÕES DE ANÁLISE AVANÇADA (SEM scikit-learn)
-# =========================
-def calcular_tendencia_simples(df, coluna):
-    """Calcula tendência simples usando método estatístico básico"""
-    anual = df.groupby('ano')[coluna].mean().reset_index()
-    if len(anual) > 1:
-        # Método simples: compara primeiro e último ano
-        primeiro_valor = anual[coluna].iloc[0]
-        ultimo_valor = anual[coluna].iloc[-1]
-        periodo = anual['ano'].iloc[-1] - anual['ano'].iloc[0]
-        
-        if periodo > 0 and primeiro_valor != 0:
-            crescimento_percentual = ((ultimo_valor - primeiro_valor) / primeiro_valor) * 100
-            return crescimento_percentual / periodo  # Crescimento médio anual percentual
-    return 0
-
-def calcular_correlacao_personalizada(df, col1, col2):
-    """Calcula correlação simples entre duas colunas"""
-    valid_data = df[[col1, col2]].dropna()
-    if len(valid_data) > 1:
-        return valid_data[col1].corr(valid_data[col2])
-    return 0
-
-# =========================
-# BARRA LATERAL AVANÇADA
+# BARRA LATERAL MODERNIZADA
 # =========================
 with st.sidebar:
-    st.markdown("<h2 style='text-align: center; color: #4ECDC4;'>🎛️ Painel de Controle Avançado</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #4ECDC4;'>🎛️ Painel de Controle</h2>", unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -302,48 +239,47 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Filtros múltiplos
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### ⭐ Filtro por Nota")
-        score_min, score_max = st.slider(
-            "Nota IMDb:",
-            min_value=0.0,
-            max_value=10.0,
-            value=(0.0, 10.0),
-            step=0.1,
-            help="Filtre os filmes pela nota no IMDb"
-        )
-    
-    with col2:
-        st.markdown("#### 💰 Filtro por ROI")
-        roi_min, roi_max = st.slider(
-            "ROI (%):",
-            min_value=-100.0,
-            max_value=1000.0,
-            value=(-100.0, 1000.0),
-            step=50.0,
-            help="Retorno sobre Investimento"
-        )
-    
-    st.markdown("---")
-    
-    # Filtro por categoria de sucesso
-    st.markdown("#### 🏆 Categoria de Sucesso")
-    categorias = st.multiselect(
-        "Selecione as categorias:",
-        options=['Blockbuster', 'High', 'Medium', 'Low'],
-        default=['Blockbuster', 'High', 'Medium', 'Low'],
-        help="Filtre pela categoria de sucesso financeiro"
+    # Filtro de notas
+    st.markdown("#### ⭐ Filtro por Nota")
+    score_min, score_max = st.slider(
+        "Selecione a faixa de notas:",
+        min_value=0.0,
+        max_value=10.0,
+        value=(0.0, 10.0),
+        step=0.1,
+        help="Filtre os filmes pela nota no IMDb"
     )
     
     st.markdown("---")
     
-    # Análise rápida
-    with st.expander("🔍 Análise Rápida"):
-        if st.button("Calcular Insights Automáticos"):
-            st.session_state.calcular_insights = True
+    # Filtro de receita
+    st.markdown("#### 💰 Filtro por Receita")
+    receita_max = df["revenue"].max()
+    receita_min, receita_max = st.slider(
+        "Selecione a faixa de receita:",
+        min_value=0.0,
+        max_value=float(receita_max),
+        value=(0.0, float(receita_max)),
+        step=1_000_000.0,
+        format="$%.0f",
+        help="Filtre os filmes pela receita de bilheteria"
+    )
+    
+    st.markdown("---")
+    
+    # Informações sobre o dataset
+    with st.expander("ℹ️ Sobre os Dados"):
+        st.markdown("""
+        **Fonte dos dados:** IMDb Movies Dataset
+        
+        **Conteúdo:**
+        - Informações sobre filmes e suas bilheterias
+        - Notas de avaliação
+        - Anos de lançamento
+        - Gêneros e idiomas
+        
+        **Atualização:** Dados carregados automaticamente
+        """)
 
 # Aplicar filtro principal
 df_filtrado = df[
@@ -351,9 +287,8 @@ df_filtrado = df[
     (df["ano"] <= ano_max) &
     (df["score"] >= score_min) &
     (df["score"] <= score_max) &
-    (df["roi"] >= roi_min) &
-    (df["roi"] <= roi_max) &
-    (df['success_category'].isin(categorias))
+    (df["revenue"] >= receita_min) &
+    (df["revenue"] <= receita_max)
 ]
 
 # Aplicar tradução aos nomes dos filmes
@@ -363,110 +298,68 @@ df_filtrado["names"] = df_filtrado["names"].apply(traduzir_nome_filme)
 # =========================
 # CABEÇALHO E MÉTRICAS PRINCIPAIS
 # =========================
-st.markdown('<h1 class="main-header">🎬 CineAnalytics Pro</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Dashboard Avançado de Análise Cinematográfica</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🎬 CineAnalytics</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">Dashboard Interativo de Análise de Filmes e Bilheterias</p>', unsafe_allow_html=True)
 
-# Métricas principais expandidas
+# Cartões de métricas principais
 if not df_filtrado.empty:
     receita_total = df_filtrado["revenue"].sum()
     receita_media = df_filtrado["revenue"].mean()
     nota_media = df_filtrado["score"].mean(skipna=True)
     total_filmes = df_filtrado.shape[0]
-    roi_medio = df_filtrado["roi"].mean()
-    orcamento_medio = df_filtrado["budget_x"].mean()
-    
-    # Análises avançadas
-    tendencia_receita = calcular_tendencia_simples(df_filtrado, 'revenue')
-    tendencia_nota = calcular_tendencia_simples(df_filtrado, 'score')
-    blockbusters = df_filtrado[df_filtrado['success_category'] == 'Blockbuster'].shape[0]
 else:
-    receita_total = receita_media = nota_media = total_filmes = roi_medio = orcamento_medio = 0
-    tendencia_receita = tendencia_nota = blockbusters = 0
+    receita_total = receita_media = nota_media = total_filmes = 0
 
-# Primeira linha de métricas
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.metric("💰 Receita Total", f"${receita_total:,.0f}", 
-             f"{tendencia_receita:+.1f}%/ano" if tendencia_receita != 0 else "N/A")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("💰 Receita Total", f"${receita_total:,.0f}", help="Soma total da receita de todos os filmes filtrados")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.metric("📊 Receita Média", f"${receita_media:,.0f}", 
-             help="Receita média por filme")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("📊 Receita Média", f"${receita_media:,.0f}", help="Receita média por filme")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 with col3:
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.metric("⭐ Nota Média", f"{nota_media:.2f}" if pd.notna(nota_media) else "—",
-             f"{tendencia_nota:+.2f}/ano" if tendencia_nota != 0 else "N/A")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("⭐ Nota Média", f"{nota_media:.2f}" if pd.notna(nota_media) else "—", 
+                 help="Nota média dos filmes no IMDb")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 with col4:
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.metric("🎭 Total de Filmes", f"{total_filmes:,}", 
-             help="Número total de filmes que correspondem aos filtros")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# Segunda linha de métricas avançadas
-col5, col6, col7, col8 = st.columns(4)
-with col5:
-    st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
-    st.metric("📈 ROI Médio", f"{roi_medio:.1f}%", 
-             help="Retorno sobre Investimento médio")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col6:
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.metric("💸 Orçamento Médio", f"${orcamento_medio:,.0f}" if orcamento_medio > 0 else "N/A",
-             help="Orçamento médio dos filmes")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col7:
-    st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
-    st.metric("🏆 Blockbusters", f"{blockbusters:,}",
-             help="Filmes na categoria Blockbuster")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col8:
-    st.markdown('<div class="metric-card-danger">', unsafe_allow_html=True)
-    eficiencia = receita_total / max(orcamento_medio * total_filmes, 1)
-    st.metric("⚡ Eficiência", f"{eficiencia:.2f}x",
-             help="Relação Receita/Orçamento")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.container():
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("🎭 Total de Filmes", f"{total_filmes:,}", help="Número total de filmes que correspondem aos filtros")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
 # =========================
-# SISTEMA DE ABAS AVANÇADO
+# NAVEGAÇÃO POR ABAS
 # =========================
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "📊 Dashboard Principal", 
-    "🎭 Análise de Performance", 
-    "📈 Tendências & Análises",
-    "🔍 Insights Avançados",
-    "🏆 Benchmarking",
-    "📋 Base de Dados"
-])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Análise Geral", "🎭 Top Filmes", "📈 Tendências", "🔍 Base de Dados"])
 
 with tab1:
-    st.markdown('<div class="section-header">📊 Visão Geral do Mercado</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">📊 Visão Geral do Mercado Cinematográfico</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Gráfico de dispersão multivariado
+        # Gráfico de dispersão - Nota vs Receita
         fig_scatter = px.scatter(
             df_filtrado,
             x="score",
             y="revenue",
-            size="budget_x",
-            color="success_category",
-            title="🎯 Relação: Nota vs Receita vs Orçamento",
-            labels={"score": "Nota IMDb", "revenue": "Receita", "budget_x": "Orçamento"},
-            hover_data=["names", "ano", "roi"],
-            color_discrete_sequence=px.colors.qualitative.Set2
+            title="🎯 Relação entre Nota e Receita",
+            labels={"score": "Nota (IMDb)", "revenue": "Receita (USD)"},
+            color="score",
+            size="revenue",
+            hover_data=["names", "ano"],
+            color_continuous_scale="viridis"
         )
         fig_scatter.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
@@ -475,345 +368,194 @@ with tab1:
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
         
-        # Distribuição de ROI
-        fig_roi = px.histogram(
-            df_filtrado,
-            x="roi",
-            nbins=50,
-            title="📊 Distribuição de ROI (Return on Investment)",
-            labels={"roi": "ROI (%)"},
-            color_discrete_sequence=['#FFA726']
+        # Distribuição de idiomas
+        contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(8).reset_index()
+        contagem_idiomas.columns = ["Idioma Original", "Quantidade de Filmes"]
+        fig_pie = px.pie(
+            contagem_idiomas,
+            values="Quantidade de Filmes",
+            names="Idioma Original",
+            title="🌎 Distribuição por Idioma Original",
+            hole=0.4,
+            color_discrete_sequence=px.colors.sequential.Plasma
         )
-        fig_roi.update_layout(
+        st.plotly_chart(fig_pie, use_container_width=True)
+    
+    with col2:
+        # Evolução temporal da receita
+        receita_anual = df_filtrado.groupby("ano")["revenue"].sum().reset_index()
+        fig_area = px.area(
+            receita_anual,
+            x="ano",
+            y="revenue",
+            title="📈 Evolução da Receita Anual",
+            labels={"ano": "Ano", "revenue": "Receita Total (USD)"}
+        )
+        fig_area.update_traces(
+            line=dict(color="#4ECDC4", width=3), 
+            fillcolor="rgba(78,205,196,0.2)"
+        )
+        fig_area.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_area, use_container_width=True)
+        
+        # Distribuição de notas
+        fig_hist = px.histogram(
+            df_filtrado,
+            x="score",
+            title="📊 Distribuição de Notas dos Filmes",
+            labels={"score": "Nota", "count": "Número de Filmes"},
+            nbins=20,
+            color_discrete_sequence=['#FF6B6B']
+        )
+        fig_hist.update_layout(
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color='white'),
             showlegend=False
         )
-        st.plotly_chart(fig_roi, use_container_width=True)
-    
-    with col2:
-        # Mapa de calor de correlações
-        numeric_cols = df_filtrado.select_dtypes(include=[np.number]).columns
-        if len(numeric_cols) > 1:
-            corr_matrix = df_filtrado[numeric_cols].corr()
-            fig_heatmap = px.imshow(
-                corr_matrix,
-                title="🔥 Mapa de Correlações (Matriz Completa)",
-                color_continuous_scale="RdBu_r",
-                aspect="auto",
-                text_auto=True
-            )
-            fig_heatmap.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white')
-            )
-            st.plotly_chart(fig_heatmap, use_container_width=True)
-        
-        # Evolução temporal múltipla
-        evolucao_anual = df_filtrado.groupby('ano').agg({
-            'revenue': 'mean',
-            'score': 'mean',
-            'roi': 'mean'
-        }).reset_index()
-        
-        fig_evolucao = go.Figure()
-        fig_evolucao.add_trace(go.Scatter(
-            x=evolucao_anual['ano'], 
-            y=evolucao_anual['revenue'],
-            name='Receita Média',
-            line=dict(color='#4ECDC4', width=3)
-        ))
-        fig_evolucao.add_trace(go.Scatter(
-            x=evolucao_anual['ano'], 
-            y=evolucao_anual['score'] * (evolucao_anual['revenue'].max() / max(evolucao_anual['score'].max(), 1)),
-            name='Nota Média (escala ajustada)',
-            line=dict(color='#FF6B6B', width=3)
-        ))
-        
-        fig_evolucao.update_layout(
-            title="📈 Evolução Comparativa: Receita vs Nota",
-            xaxis_title="Ano",
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
-        )
-        st.plotly_chart(fig_evolucao, use_container_width=True)
+        st.plotly_chart(fig_hist, use_container_width=True)
 
 with tab2:
-    st.markdown('<div class="section-header">🎭 Análise de Performance Detalhada</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">🎭 Ranking dos Filmes Mais Bem Sucedidos</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Top filmes por ROI
-        st.markdown("#### 💰 Melhores Investimentos (ROI)")
-        top_roi = df_filtrado.nlargest(10, 'roi')[['names', 'roi', 'revenue', 'budget_x']]
-        if not top_roi.empty:
-            top_roi = top_roi.copy()
-            top_roi['ROI'] = top_roi['roi'].apply(lambda x: f"{x:.1f}%")
-            top_roi['Receita'] = top_roi['revenue'].apply(lambda x: f"${x:,.0f}")
-            top_roi['Orçamento'] = top_roi['budget_x'].apply(lambda x: f"${x:,.0f}" if x > 0 else "N/A")
-            st.dataframe(top_roi[['names', 'ROI', 'Receita', 'Orçamento']].rename(
-                columns={'names': 'Filme'}), use_container_width=True)
-        else:
-            st.info("Nenhum dado disponível para exibir")
-    
-    with col2:
-        # Performance por categoria de sucesso
-        st.markdown("#### 🏆 Distribuição por Categoria")
-        success_dist = df_filtrado['success_category'].value_counts()
-        if not success_dist.empty:
-            fig_pie_success = px.pie(
-                values=success_dist.values,
-                names=success_dist.index,
-                title="Distribuição de Categorias de Sucesso",
-                color_discrete_sequence=px.colors.qualitative.Set3
-            )
-            st.plotly_chart(fig_pie_success, use_container_width=True)
-        else:
-            st.info("Nenhum dado disponível para exibir")
-    
-    # Análise de eficiência
-    st.markdown("#### ⚡ Análise de Eficiência: Receita vs Orçamento")
-    if not df_filtrado.empty:
-        fig_efficiency = px.scatter(
-            df_filtrado,
-            x="budget_x",
-            y="revenue",
-            color="success_category",
-            size="score",
-            title="Eficiência: Receita Gerada vs Orçamento Investido",
-            labels={"budget_x": "Orçamento", "revenue": "Receita"},
-            hover_data=["names", "roi"]
-        )
-        # Adicionar linha de referência (y = x)
-        max_val = max(df_filtrado['budget_x'].max(), df_filtrado['revenue'].max())
-        fig_efficiency.add_shape(
-            type="line", line=dict(dash="dash", color="white"),
-            x0=0, y0=0, x1=max_val, y1=max_val
-        )
-        st.plotly_chart(fig_efficiency, use_container_width=True)
-    else:
-        st.info("Nenhum dado disponível para exibir")
-
-with tab3:
-    st.markdown('<div class="section-header">📈 Análise de Tendências</div>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 4])
     
     with col1:
-        st.markdown("#### 📊 Simulador de Performance")
-        
-        with st.form("simulador_performance"):
-            st.markdown("##### Parâmetros do Filme")
-            col_s1, col_s2 = st.columns(2)
-            
-            with col_s1:
-                orcamento_simulado = st.number_input("Orçamento (USD)", 
-                                                   min_value=1000000, 
-                                                   max_value=500000000,
-                                                   value=100000000,
-                                                   step=1000000)
-                nota_esperada = st.slider("Nota IMDb Esperada", 0.0, 10.0, 7.0, 0.1)
-            
-            with col_s2:
-                mes_lancamento = st.selectbox("Mês de Lançamento", 
-                                            range(1, 13),
-                                            format_func=lambda x: datetime(2020, x, 1).strftime('%B'))
-                if 'genre' in df_filtrado.columns and not df_filtrado.empty:
-                    generos_disponiveis = df_filtrado['genre'].value_counts().head(10).index.tolist()
-                    categoria_genero = st.selectbox("Gênero Principal", generos_disponiveis)
-                else:
-                    categoria_genero = st.selectbox("Gênero Principal", ["Ação", "Drama", "Comédia"])
-            
-            submitted = st.form_submit_button("🎯 Calcular Previsão")
-            
-            if submitted and not df_filtrado.empty:
-                # Cálculo simplificado baseado em médias históricas
-                similar_movies = df_filtrado[
-                    (df_filtrado['score'].between(nota_esperada-1, nota_esperada+1)) &
-                    (df_filtrado['budget_x'].between(orcamento_simulado*0.5, orcamento_simulado*1.5))
-                ]
-                
-                if not similar_movies.empty:
-                    receita_estimada = similar_movies['revenue'].mean()
-                    roi_estimado = (receita_estimada - orcamento_simulado) / orcamento_simulado * 100
-                    
-                    st.markdown(f'<div class="prediction-box">', unsafe_allow_html=True)
-                    st.metric("💰 Receita Estimada", f"${receita_estimada:,.0f}")
-                    st.metric("📈 ROI Estimado", f"{roi_estimado:.1f}%")
-                    
-                    # Determinar categoria
-                    if not df_filtrado.empty:
-                        limiar_blockbuster = df_filtrado['revenue'].quantile(0.8)
-                        categoria = "Blockbuster" if receita_estimada > limiar_blockbuster else "Alto Sucesso"
-                        st.metric("🎯 Categoria Prevista", categoria)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.warning("Não há filmes similares suficientes para fazer uma previsão precisa.")
+        top_n = st.slider("Número de filmes no TOP:", 5, 25, 10)
+        ordenar_por = st.selectbox("Ordenar por:", ["Receita", "Nota"], index=0)
     
     with col2:
-        st.markdown("#### 📈 Tendências Temporais")
+        if ordenar_por == "Receita":
+            df_top = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
+            titulo = f"🏆 Top {top_n} Filmes por Receita"
+            eixo_y = "revenue"
+            label_y = "Receita (USD)"
+        else:
+            df_top = df_filtrado.sort_values(by="score", ascending=False).head(top_n)
+            titulo = f"🏆 Top {top_n} Filmes por Nota"
+            eixo_y = "score"
+            label_y = "Nota"
         
-        if not df_filtrado.empty:
-            # Tendência de ROI ao longo do tempo
-            roi_temporal = df_filtrado.groupby('ano')['roi'].mean().reset_index()
-            fig_roi_trend = px.line(
-                roi_temporal,
-                x='ano',
-                y='roi',
-                title="📈 Evolução do ROI Médio Anual",
-                markers=True
-            )
-            fig_roi_trend.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white')
-            )
-            st.plotly_chart(fig_roi_trend, use_container_width=True)
-
-with tab4:
-    st.markdown('<div class="section-header">🔍 Insights e Recomendações</div>', unsafe_allow_html=True)
-    
-    # Insights automáticos
-    st.markdown("#### 💡 Insights Automáticos")
-    
-    if not df_filtrado.empty:
-        # Insight 1: Melhor custo-benefício
-        df_roi_valido = df_filtrado[df_filtrado['roi'] > -100]
-        if not df_roi_valido.empty:
-            melhor_custo_beneficio = df_roi_valido.loc[df_roi_valido['roi'].idxmax()]
-            pior_custo_beneficio = df_roi_valido.loc[df_roi_valido['roi'].idxmin()]
-            
-            col_i1, col_i2 = st.columns(2)
-            
-            with col_i1:
-                st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
-                st.markdown(f"##### 🏆 Melhor Investimento")
-                st.markdown(f"**{melhor_custo_beneficio['names']}**")
-                st.markdown(f"ROI: **{melhor_custo_beneficio['roi']:.1f}%**")
-                st.markdown(f"Nota: **{melhor_custo_beneficio['score']:.1f}**")
-                st.markdown('</div>', unsafe_allow_html=True)
-            
-            with col_i2:
-                st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
-                st.markdown(f"##### ⚠️ Investimento de Risco")
-                st.markdown(f"**{pior_custo_beneficio['names']}**")
-                st.markdown(f"ROI: **{pior_custo_beneficio['roi']:.1f}%**")
-                st.markdown(f"Nota: **{pior_custo_beneficio['score']:.1f}**")
-                st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Análise de correlações interessantes
-        st.markdown("#### 🔗 Correlações Interessantes")
-        col_c1, col_c2, col_c3 = st.columns(3)
-        
-        with col_c1:
-            corr_nota_receita = calcular_correlacao_personalizada(df_filtrado, 'score', 'revenue')
-            st.metric("Nota vs Receita", f"{corr_nota_receita:.2f}")
-        
-        with col_c2:
-            corr_orcamento_receita = calcular_correlacao_personalizada(df_filtrado, 'budget_x', 'revenue')
-            st.metric("Orçamento vs Receita", f"{corr_orcamento_receita:.2f}")
-        
-        with col_c3:
-            corr_nota_roi = calcular_correlacao_personalizada(df_filtrado, 'score', 'roi')
-            st.metric("Nota vs ROI", f"{corr_nota_roi:.2f}")
-    
-    # Análise de sazonalidade
-    st.markdown("#### 📅 Análise de Sazonalidade")
-    if 'mes' in df_filtrado.columns and not df_filtrado.empty:
-        sazonalidade = df_filtrado.groupby('mes').agg({
-            'revenue': 'mean',
-            'score': 'mean',
-            'roi': 'mean'
-        }).reset_index()
-        
-        fig_sazonal = go.Figure()
-        fig_sazonal.add_trace(go.Bar(
-            x=['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec'],
-            y=sazonalidade['revenue'],
-            name='Receita Média',
-            marker_color='#4ECDC4'
-        ))
-        fig_sazonal.update_layout(
-            title="Receita Média por Mês",
+        fig_bar = px.bar(
+            df_top,
+            x="names",
+            y=eixo_y,
+            title=titulo,
+            labels={"names": "Filme", eixo_y: label_y},
+            color=eixo_y,
+            color_continuous_scale="viridis",
+            hover_data=["score", "revenue", "ano"] if ordenar_por == "Nota" else ["score", "ano"]
+        )
+        fig_bar.update_layout(
+            xaxis_tickangle=-45, 
+            showlegend=False,
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
             font=dict(color='white')
         )
-        st.plotly_chart(fig_sazonal, use_container_width=True)
+        st.plotly_chart(fig_bar, use_container_width=True)
+    
+    # Tabela dos top filmes
+    st.markdown("#### 📋 Detalhes dos Filmes em Destaque")
+    df_display_top = df_top[["names", "score", "revenue", "ano", "orig_lang"]].copy()
+    df_display_top.columns = ["Filme", "Nota", "Receita (USD)", "Ano", "Idioma"]
+    df_display_top["Receita (USD)"] = df_display_top["Receita (USD)"].apply(lambda x: f"${x:,.0f}")
+    st.dataframe(df_display_top, use_container_width=True)
 
-with tab5:
-    st.markdown('<div class="section-header">🏆 Benchmarking e Comparações</div>', unsafe_allow_html=True)
+with tab3:
+    st.markdown('<div class="section-header">📈 Análise de Tendências e Padrões</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Benchmark por gênero
-        st.markdown("#### 🎭 Performance por Gênero")
-        if 'genre' in df_filtrado.columns and not df_filtrado.empty:
-            genre_benchmark = df_filtrado.groupby('genre').agg({
-                'revenue': 'mean',
-                'score': 'mean',
-                'roi': 'mean',
-                'names': 'count'
-            }).round(2).nlargest(10, 'revenue')
-            
-            st.dataframe(genre_benchmark.rename(columns={
-                'revenue': 'Receita Média',
-                'score': 'Nota Média',
-                'roi': 'ROI Médio',
-                'names': 'Nº Filmes'
-            }), use_container_width=True)
-        else:
-            st.info("Dados de gênero não disponíveis")
+        # Média de notas por ano
+        media_notas_anual = df_filtrado.groupby("ano")["score"].mean().reset_index()
+        fig_line = px.line(
+            media_notas_anual,
+            x="ano",
+            y="score",
+            title="📈 Evolução da Nota Média por Ano",
+            labels={"ano": "Ano", "score": "Nota Média"},
+            markers=True
+        )
+        fig_line.update_traces(line=dict(color="#FF6B6B", width=3))
+        fig_line.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_line, use_container_width=True)
     
     with col2:
-        # Comparação de décadas
-        st.markdown("#### 📊 Evolução por Década")
-        if not df_filtrado.empty:
-            df_filtrado_copy = df_filtrado.copy()
-            df_filtrado_copy['decada'] = (df_filtrado_copy['ano'] // 10) * 10
-            decada_stats = df_filtrado_copy.groupby('decada').agg({
-                'revenue': 'mean',
-                'score': 'mean',
-                'budget_x': 'mean'
-            }).reset_index()
-            
-            fig_decada = px.line(
-                decada_stats,
-                x='decada',
-                y=['revenue', 'budget_x'],
-                title="Evolução da Receita e Orçamento por Década",
-                markers=True
-            )
-            fig_decada.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white')
-            )
-            st.plotly_chart(fig_decada, use_container_width=True)
-
-with tab6:
-    st.markdown('<div class="section-header">🔍 Base de Dados Completa</div>', unsafe_allow_html=True)
+        # Contagem de filmes por ano
+        contagem_filmes_anual = df_filtrado.groupby("ano").size().reset_index(name="count")
+        fig_bar_count = px.bar(
+            contagem_filmes_anual,
+            x="ano",
+            y="count",
+            title="🎬 Número de Filmes por Ano",
+            labels={"ano": "Ano", "count": "Número de Filmes"},
+            color="count",
+            color_continuous_scale="blues"
+        )
+        fig_bar_count.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white'),
+            showlegend=False
+        )
+        st.plotly_chart(fig_bar_count, use_container_width=True)
     
-    # Sistema de busca e filtros
+    # Heatmap de correlação
+    st.markdown("#### 🔍 Mapa de Correlações")
+    numeric_cols = df_filtrado.select_dtypes(include=['number']).columns
+    if len(numeric_cols) > 1:
+        corr_matrix = df_filtrado[numeric_cols].corr()
+        fig_heatmap = px.imshow(
+            corr_matrix,
+            title="Mapa de Calor de Correlações entre Variáveis Numéricas",
+            color_continuous_scale="RdBu_r",
+            aspect="auto"
+        )
+        fig_heatmap.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        st.plotly_chart(fig_heatmap, use_container_width=True)
+
+with tab4:
+    st.markdown('<div class="section-header">🔍 Explorar Base de Dados Completa</div>', unsafe_allow_html=True)
+    
+    # Informações sobre o dataset
+    col_info1, col_info2, col_info3 = st.columns(3)
+    
+    with col_info1:
+        st.metric("Total de Filmes no Dataset", f"{len(df):,}")
+    
+    with col_info2:
+        st.metric("Período Abrangido", f"{df['ano'].min()} - {df['ano'].max()}")
+    
+    with col_info3:
+        st.metric("Idiomas Diferentes", f"{df['orig_lang'].nunique()}")
+    
+    # Filtros de busca
     col_f1, col_f2, col_f3 = st.columns([2, 2, 1])
     with col_f1:
-        search_term = st.text_input("🔍 Buscar filme:", placeholder="Digite o nome do filme...", key="search_db")
+        search_term = st.text_input("🔍 Buscar filme:", placeholder="Digite o nome do filme...")
     with col_f2:
         sort_by = st.selectbox(
             "Ordenar por:",
-            ["Receita", "Pontuação", "ROI", "Orçamento", "Ano de Lançamento"],
-            index=0,
-            key="sort_db"
+            ["Receita", "Pontuação", "Ano de Lançamento", "Nome do Filme"],
+            index=0
         )
     with col_f3:
-        resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0, key="pagination_db")
-    
+        resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0)
+
     # Preparar dados para exibição
     df_display = df_filtrado.copy().rename(columns={
         "names": "Nome do Filme",
@@ -823,10 +565,7 @@ with tab6:
         "ano": "Ano de Lançamento",
         "date_x": "Data de Lançamento",
         "country": "País de Origem",
-        "genre": "Gênero",
-        "budget_x": "Orçamento",
-        "roi": "ROI",
-        "success_category": "Categoria Sucesso"
+        "genre": "Gênero"
     })
 
     # Formata a data no padrão brasileiro (dd/mm/aaaa)
@@ -835,25 +574,16 @@ with tab6:
             df_display["Data de Lançamento"], errors="coerce"
         ).dt.strftime("%d/%m/%Y")
 
-    # Formata valores numéricos
+    # Formata a receita como moeda (mantém como número para ordenação)
     df_display["Receita_Original"] = df_display["Receita"]
     df_display["Receita"] = df_display["Receita"].apply(
         lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
     )
 
+    # Formata a pontuação (mantém como número para ordenação)
     df_display["Pontuação_Original"] = df_display["Pontuação"]
     df_display["Pontuação"] = df_display["Pontuação"].apply(
         lambda x: f"{x:.1f}" if pd.notnull(x) else "N/A"
-    )
-
-    df_display["ROI_Original"] = df_display["ROI"]
-    df_display["ROI"] = df_display["ROI"].apply(
-        lambda x: f"{x:.1f}%" if pd.notnull(x) else "N/A"
-    )
-
-    df_display["Orçamento_Original"] = df_display["Orçamento"]
-    df_display["Orçamento"] = df_display["Orçamento"].apply(
-        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
     )
 
     # Filtro de busca
@@ -868,27 +598,25 @@ with tab6:
     sort_map = {
         "Receita": "Receita_Original",
         "Pontuação": "Pontuação_Original", 
-        "ROI": "ROI_Original",
-        "Orçamento": "Orçamento_Original",
-        "Ano de Lançamento": "Ano de Lançamento"
+        "Ano de Lançamento": "Ano de Lançamento",
+        "Nome do Filme": "Nome do Filme"
     }
     
     if sort_by in sort_map and sort_map[sort_by] in df_display.columns:
-        ascending = sort_by in ["Ano de Lançamento"]  # Ajuste conforme necessidade
+        ascending = sort_by == "Nome do Filme"
         df_display = df_display.sort_values(by=sort_map[sort_by], ascending=ascending)
 
     # Colunas a exibir
     colunas_para_mostrar = [
         "Nome do Filme", "Gênero", "Idioma Original", "País de Origem",
-        "Pontuação", "Receita", "Orçamento", "ROI", "Categoria Sucesso", 
-        "Ano de Lançamento", "Data de Lançamento"
+        "Pontuação", "Receita", "Ano de Lançamento", "Data de Lançamento"
     ]
 
     # Sistema de paginação
     total_resultados = len(df_display)
     if total_resultados > 0:
         total_paginas = (total_resultados + resultados_por_pagina - 1) // resultados_por_pagina
-        pagina_atual = st.number_input("Página:", min_value=1, max_value=max(total_paginas, 1), value=1)
+        pagina_atual = st.number_input("Página:", min_value=1, max_value=total_paginas, value=1)
         
         inicio = (pagina_atual - 1) * resultados_por_pagina
         fim = inicio + resultados_por_pagina
@@ -914,7 +642,7 @@ with tab6:
                 st.download_button(
                     label="Baixar CSV",
                     data=csv,
-                    file_name="filmes_analise_completa.csv",
+                    file_name="filmes_traduzidos.csv",
                     mime="text/csv",
                     use_container_width=True
                 )
@@ -927,9 +655,8 @@ with tab6:
 st.markdown("---")
 st.markdown(
     f"<div style='text-align: center; color: #666;'>"
-    f"📊 Dashboard CineAnalytics Pro • Análise Avançada • "
-    f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')} • "
-    f"💡 {len(df_filtrado):,} filmes analisados"
+    f"📊 Dashboard CineAnalytics • Desenvolvido com Streamlit • "
+    f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
     f"</div>",
     unsafe_allow_html=True
 )
