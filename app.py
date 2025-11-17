@@ -16,7 +16,7 @@ warnings.filterwarnings('ignore')
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
 st.set_page_config(
-    page_title="CineAnalytics Pro",
+    page_title="CineAnalytics ",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -432,32 +432,6 @@ with col4:
               help="Número total de filmes que correspondem aos filtros")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Segunda linha de métricas avançadas
-col5, col6, col7, col8 = st.columns(4)
-with col5:
-    st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
-    st.metric("📈 ROI Médio", f"{roi_medio:.1f}%", 
-              help="Retorno sobre Investimento médio")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col6:
-    st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-    st.metric("💸 Orçamento Médio", f"${orcamento_medio:,.0f}" if orcamento_medio > 0 else "N/A",
-              help="Orçamento médio dos filmes")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col7:
-    st.markdown('<div class="metric-card-warning">', unsafe_allow_html=True)
-    st.metric("🏆 Blockbusters", f"{blockbusters:,}",
-              help="Filmes na categoria Blockbuster")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with col8:
-    st.markdown('<div class="metric-card-danger">', unsafe_allow_html=True)
-    eficiencia = receita_total / max(orcamento_medio * total_filmes, 1)
-    st.metric("⚡ Eficiência", f"{eficiencia:.2f}x",
-              help="Relação Receita/Orçamento")
-    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
