@@ -264,7 +264,7 @@ def carregar_dados():
             df['revenue'] >= df['revenue'].quantile(0.4),
             df['revenue'] < df['revenue'].quantile(0.4)
         ]
-        choices = ['Blockbuster', 'Alto', 'Médio', 'Baixo'']
+        choices = ['Blockbuster', 'High', 'Medium', 'Low']
         df['success_category'] = np.select(conditions, choices, default='Low')
         
         # Popularidade normalizada
