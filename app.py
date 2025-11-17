@@ -264,7 +264,7 @@ def carregar_dados():
             df['revenue'] >= df['revenue'].quantile(0.4),
             df['revenue'] < df['revenue'].quantile(0.4)
         ]
-        choices = ['Blockbuster', 'High', 'Medium', 'Low']
+        choices = ['Blockbuster', 'Alto', 'Médio', 'Baixo'']
         df['success_category'] = np.select(conditions, choices, default='Low')
         
         # Popularidade normalizada
@@ -355,8 +355,8 @@ with st.sidebar:
     st.markdown("#### 🏆 Categoria de Sucesso")
     categorias = st.multiselect(
         "Selecione as categorias:",
-        options=['Blockbuster', 'High', 'Medium', 'Low'],
-        default=['Blockbuster', 'High', 'Medium', 'Low'],
+        options=['Blockbuster', 'Alto', 'Médio', 'Baixo'],
+        default=['Blockbuster', 'Alto', 'Médio', 'Baixo'],
         help="Filtre pela categoria de sucesso financeiro"
     )
     
@@ -718,21 +718,21 @@ with tab4:
     
     # Análise de sazonalidade
     st.markdown("#### 📅 Análise de Sazonalidade")
-    if 'mes' in df_filtrado.columns and not df_filtrado.empty:
-        sazonalidade = df_filtrado.groupby('mes').agg({
-            'revenue': 'mean',
-            'score': 'mean',
-            'roi': 'mean'
-        }).reset_index()
-        
-        fig_sazonal = go.Figure()
-        fig_sazonal.add_trace(go.Bar(
-            x=['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec'],
-            y=sazonalidade['revenue'],
-            name='Receita Média',
-            marker_color='#4ECDC4'
-        ))
+if 'mes' in df_filtrado.columns and not df_filtrado.empty:
+    sazonalidade = df_filtrado.groupby('mes').agg({
+        'revenue': 'mean',
+        'score': 'mean',
+        'roi': 'mean'
+    }).reset_index()
+    
+    fig_sazonal = go.Figure()
+    fig_sazonal.add_trace(go.Bar(
+        x=['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+        y=sazonalidade['revenue'],
+        name='Receita Média',
+        marker_color='#4ECDC4'
+    ))
         fig_sazonal.update_layout(
             title="Receita Média por Mês",
             plot_bgcolor='rgba(0,0,0,0)',
