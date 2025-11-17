@@ -355,8 +355,8 @@ with st.sidebar:
     st.markdown("#### 🏆 Categoria de Sucesso")
     categorias = st.multiselect(
         "Selecione as categorias:",
-        options=['Blockbuster', 'Alto', 'Médio', 'Baixo'],
-        default=['Blockbuster', 'Alto', 'Médio', 'Baixo'],
+        options=['Blockbuster', 'High', 'Medium', 'Low'],
+        default=['Blockbuster', 'High', 'Medium', 'Low'],
         help="Filtre pela categoria de sucesso financeiro"
     )
     
