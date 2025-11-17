@@ -726,13 +726,13 @@ if 'mes' in df_filtrado.columns and not df_filtrado.empty:
     }).reset_index()
     
     fig_sazonal = go.Figure()
-    fig_sazonal.add_trace(go.Bar(
-        x=['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-           'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-        y=sazonalidade['revenue'],
-        name='Receita Média',
-        marker_color='#4ECDC4'
-    ))
+        fig_sazonal.add_trace(go.Bar(
+            x=['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec'],
+            y=sazonalidade['revenue'],
+            name='Receita Média',
+            marker_color='#4ECDC4'
+        ))
         fig_sazonal.update_layout(
             title="Receita Média por Mês",
             plot_bgcolor='rgba(0,0,0,0)',
@@ -740,6 +740,7 @@ if 'mes' in df_filtrado.columns and not df_filtrado.empty:
             font=dict(color='white')
         )
         st.plotly_chart(fig_sazonal, use_container_width=True)
+        
 
 with tab5:
     st.markdown('<div class="section-header">🏆 Benchmarking e Comparações</div>', unsafe_allow_html=True)
