@@ -368,7 +368,7 @@ def carregar_dados_completos():
         with st.spinner("🔄 Aplicando traduções..."):
             
             # Traduzir nomes dos filmes
-            if 'names' in df.columns:
+             if 'names' in df.columns:
                 df["nome_pt"] = df["names"].apply(tradutor.traduzir_filme)
             else:
                 st.error("❌ Coluna 'names' não encontrada no dataset")
@@ -403,34 +403,32 @@ def carregar_dados_completos():
         df["lucro"] = df["revenue"] - df["budget_x"]
         
         # Categorizar sucesso
-try:
-    revenue_q = df['revenue'].quantile([0.3, 0.5, 0.7, 0.9])
+ revenue_q = df['revenue'].quantile([0.3, 0.5, 0.7, 0.9])
 
-    conditions = [
-        (df['revenue'] >= revenue_q.loc[0.9]),
-        (df['revenue'] >= revenue_q.loc[0.7]),
-        (df['revenue'] >= revenue_q.loc[0.5]),
-        (df['revenue'] >= revenue_q.loc[0.3]),
-        (df['revenue'] <  revenue_q.loc[0.3])
-    ]
+        conditions = [
+            (df['revenue'] >= revenue_q.loc[0.9]),
+            (df['revenue'] >= revenue_q.loc[0.7]),
+            (df['revenue'] >= revenue_q.loc[0.5]),
+            (df['revenue'] >= revenue_q.loc[0.3]),
+            (df['revenue'] <  revenue_q.loc[0.3])
+        ]
 
-    choices = [
-        'Super Blockbuster',
-        'Blockbuster',
-        'High',
-        'Medium',
-        'Low'
-    ]
+        choices = [
+            'Super Blockbuster',
+            'Blockbuster',
+            'High',
+            'Medium',
+            'Low'
+        ]
 
-    df['success_category'] = np.select(conditions, choices, default='Low')
+        df['success_category'] = np.select(conditions, choices, default='Low')
 
-    st.success(f"✅ Dados carregados com sucesso! {len(df)} filmes processados.")
-    return df
+        st.success(f"✅ Dados carregados com sucesso! {len(df)} filmes processados.")
+        return df
 
-except Exception as e:
-    st.error(f"❌ Erro crítico ao carregar dados: {str(e)}")
-    return None
-
+    except Exception as e:
+        st.error(f"❌ Erro crítico ao carregar dados: {str(e)}")
+        return None
 
 # =========================
 # INTERFACE PRINCIPAL
