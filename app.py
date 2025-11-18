@@ -370,7 +370,7 @@ def carregar_dados_completos():
             # Traduzir nomes dos filmes
              if 'names' in df.columns:
                 df["nome_pt"] = df["names"].apply(tradutor.traduzir_filme)
-            else:
+             else:
                 st.error("❌ Coluna 'names' não encontrada no dataset")
                 df["nome_pt"] = "Nome não disponível"
             
