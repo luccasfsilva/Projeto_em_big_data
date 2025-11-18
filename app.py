@@ -206,7 +206,7 @@ TRADUCOES_FILMES = {
     "The Da Vinci Code": "O Código Da Vinci",
     "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe": "As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa",
     "The Passion of the Christ": "A Paixão de Cristo",
-    "The Exorcist": "O Exorcist",
+    "The Exorcist": "O Exorcista",
     "The Sound of Music": "A Noviça Rebelde",
     "The Sting": "Um Golpe de Mestre",
     "Butch Cassidy and the Sundance Kid": "Butch Cassidy e o Menino da Lua",
@@ -270,7 +270,7 @@ class SistemaTraducao:
     
     def traduzir_filme(self, nome_original):
         """Traduz nome do filme com cache"""
-        if pd.isna(nome_original):
+        if pd.isna(nome_original) or not isinstance(nome_original, str):
             return nome_original
         
         if nome_original in self.cache_traducoes:
@@ -282,14 +282,14 @@ class SistemaTraducao:
     
     def traduzir_genero(self, genero_original):
         """Traduz gênero com suporte para múltiplos gêneros"""
-        if pd.isna(genero_original):
-            return genero_original
+        if pd.isna(genero_original) or not isinstance(genero_original, str):
+            return "Gênero não disponível"
         
         if genero_original in self.cache_generos:
             return self.cache_generos[genero_original]
         
         # Se for uma string com múltiplos gêneros separados por vírgula
-        if isinstance(genero_original, str) and ',' in genero_original:
+        if ',' in genero_original:
             generos = [g.strip() for g in genero_original.split(',')]
             generos_traduzidos = [TRADUCOES_GENEROS.get(g, g) for g in generos]
             traducao = ', '.join(generos_traduzidos)
@@ -309,12 +309,13 @@ class SistemaTraducao:
                 data = pd.to_datetime(data)
             
             dia = data.day
-            mes = MESES_PORTUGUES[data.month]
+            mes_numero = data.month
+            mes = MESES_PORTUGUES.get(mes_numero, f"Mês {mes_numero}")
             ano = data.year
             
             return f"{dia} de {mes} de {ano}"
-        except:
-            return "Data inválida"
+        except Exception as e:
+            return f"Data inválida: {str(e)}"
 
 # =========================
 # CARREGAR E PROCESSAR DADOS
@@ -328,35 +329,69 @@ def carregar_dados_completos():
     
     try:
         # Carregar dados
-        df = pd.read_csv(CSV_URL, parse_dates=['date_x'])
+        df = pd.read_csv(CSV_URL)
+        
+        # Verificar colunas disponíveis
+        st.info(f"📊 Colunas disponíveis no dataset: {list(df.columns)}")
         
         # Inicializar sistema de tradução
         tradutor = SistemaTraducao()
         
-        # Processar dados básicos
+        # Processar dados básicos - com tratamento de erros robusto
         df["revenue"] = pd.to_numeric(df.get("revenue"), errors="coerce").fillna(0)
         df["score"] = pd.to_numeric(df.get("score"), errors="coerce").fillna(0)
         df["budget_x"] = pd.to_numeric(df.get("budget_x"), errors="coerce").fillna(0)
         
+        # Processar datas - com múltiplas tentativas
+        date_columns = ['date_x', 'date_published', 'release_date']
+        date_column = None
+        
+        for col in date_columns:
+            if col in df.columns:
+                date_column = col
+                break
+        
+        if date_column:
+            df["date_x"] = pd.to_datetime(df[date_column], errors='coerce')
+        else:
+            st.warning("⚠️ Nenhuma coluna de data encontrada. Criando datas fictícias.")
+            # Criar datas fictícias baseadas no índice
+            start_date = datetime(2000, 1, 1)
+            df["date_x"] = [start_date + timedelta(days=x*30) for x in range(len(df))]
+        
         # Extrair componentes de data
-        df["ano"] = df["date_x"].dt.year.fillna(0).astype(int)
-        df["mes"] = df["date_x"].dt.month.fillna(0).astype(int)
-        df["dia"] = df["date_x"].dt.day.fillna(0).astype(int)
+        df["ano"] = df["date_x"].dt.year.fillna(2000).astype(int)
+        df["mes"] = df["date_x"].dt.month.fillna(1).astype(int)
+        df["dia"] = df["date_x"].dt.day.fillna(1).astype(int)
         
         # Aplicar traduções
-        st.info("🔄 Aplicando traduções...")
-        
-        # Traduzir nomes dos filmes
-        df["nome_pt"] = df["names"].apply(tradutor.traduzir_filme)
-        
-        # Traduzir gêneros se a coluna existir
-        if 'genre' in df.columns:
-            df["genero_pt"] = df["genre"].apply(tradutor.traduzir_genero)
-        else:
-            df["genero_pt"] = "Gênero não disponível"
-        
-        # Adicionar data formatada em português
-        df["data_completa_pt"] = df["date_x"].apply(tradutor.formatar_data_completa)
+        with st.spinner("🔄 Aplicando traduções..."):
+            
+            # Traduzir nomes dos filmes
+            if 'names' in df.columns:
+                df["nome_pt"] = df["names"].apply(tradutor.traduzir_filme)
+            else:
+                st.error("❌ Coluna 'names' não encontrada no dataset")
+                df["nome_pt"] = "Nome não disponível"
+            
+            # Traduzir gêneros - verificar colunas possíveis
+            genre_columns = ['genre', 'genres', 'category', 'type']
+            genre_column = None
+            
+            for col in genre_columns:
+                if col in df.columns:
+                    genre_column = col
+                    break
+            
+            if genre_column:
+                df["genero_pt"] = df[genre_column].apply(tradutor.traduzir_genero)
+                st.success(f"✅ Gêneros traduzidos da coluna: {genre_column}")
+            else:
+                st.warning("⚠️ Nenhuma coluna de gênero encontrada. Usando valor padrão.")
+                df["genero_pt"] = "Gênero não disponível"
+            
+            # Adicionar data formatada em português
+            df["data_completa_pt"] = df["date_x"].apply(tradutor.formatar_data_completa)
         
         # Calcular métricas financeiras
         df["roi"] = np.where(
@@ -368,20 +403,22 @@ def carregar_dados_completos():
         df["lucro"] = df["revenue"] - df["budget_x"]
         
         # Categorizar sucesso
+        revenue_q = df['revenue'].quantile([0.3, 0.5, 0.7, 0.9])
         conditions = [
-            (df['revenue'] >= df['revenue'].quantile(0.9)),
-            (df['revenue'] >= df['revenue'].quantile(0.7)),
-            (df['revenue'] >= df['revenue'].quantile(0.5)),
-            (df['revenue'] >= df['revenue'].quantile(0.3)),
-            (df['revenue'] < df['revenue'].quantile(0.3))
+            (df['revenue'] >= revenue_q[0.9]),
+            (df['revenue'] >= revenue_q[0.7]),
+            (df['revenue'] >= revenue_q[0.5]),
+            (df['revenue'] >= revenue_q[0.3]),
+            (df['revenue'] < revenue_q[0.3])
         ]
         choices = ['Super Blockbuster', 'Blockbuster', 'High', 'Medium', 'Low']
         df['success_category'] = np.select(conditions, choices, default='Low')
         
+        st.success(f"✅ Dados carregados com sucesso! {len(df)} filmes processados.")
         return df
         
     except Exception as e:
-        st.error(f"❌ Erro ao carregar dados: {str(e)}")
+        st.error(f"❌ Erro crítico ao carregar dados: {str(e)}")
         return None
 
 # =========================
@@ -391,7 +428,23 @@ def carregar_dados_completos():
 # Carregar dados
 df = carregar_dados_completos()
 if df is None:
+    st.error("Não foi possível carregar os dados. Verifique a conexão e tente novamente.")
     st.stop()
+
+# Verificar se as colunas necessárias existem
+colunas_necessarias = ['genero_pt', 'nome_pt', 'data_completa_pt']
+colunas_faltantes = [col for col in colunas_necessarias if col not in df.columns]
+
+if colunas_faltantes:
+    st.warning(f"⚠️ Colunas faltantes: {colunas_faltantes}")
+    # Criar colunas faltantes com valores padrão
+    for col in colunas_faltantes:
+        if col == 'genero_pt':
+            df['genero_pt'] = "Gênero não disponível"
+        elif col == 'nome_pt':
+            df['nome_pt'] = df.get('names', 'Nome não disponível')
+        elif col == 'data_completa_pt':
+            df['data_completa_pt'] = "Data não disponível"
 
 # =========================
 # BARRA LATERAL
@@ -409,14 +462,26 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Filtro por gênero
+    # Filtro por gênero - com verificação segura
     st.markdown("### 🎭 Filtro por Gênero")
-    generos_disponiveis = sorted(df["genero_pt"].unique())
-    generos_selecionados = st.multiselect(
-        "Selecione os gêneros:",
-        options=generos_disponiveis,
-        default=generos_disponiveis[:5] if len(generos_disponiveis) > 5 else generos_disponiveis
-    )
+    
+    # Verificar se a coluna genero_pt existe e tem dados
+    if 'genero_pt' in df.columns:
+        generos_disponiveis = sorted([g for g in df["genero_pt"].unique() if pd.notna(g) and g != ""])
+        
+        if generos_disponiveis:
+            generos_selecionados = st.multiselect(
+                "Selecione os gêneros:",
+                options=generos_disponiveis,
+                default=generos_disponiveis[:3] if len(generos_disponiveis) > 3 else generos_disponiveis,
+                help="Escolha os gêneros para filtrar"
+            )
+        else:
+            st.warning("Nenhum gênero disponível para filtro")
+            generos_selecionados = []
+    else:
+        st.error("Coluna de gêneros não disponível")
+        generos_selecionados = []
     
     st.markdown("---")
     
@@ -429,16 +494,36 @@ with st.sidebar:
     
     roi_min, roi_max = st.slider(
         "📈 ROI (%):",
-        -100.0, 1000.0, (-100.0, 1000.0), 50.0
+        float(df["roi"].min()), float(df["roi"].max()), 
+        (float(df["roi"].quantile(0.1)), float(df["roi"].quantile(0.9))), 
+        50.0
     )
 
-# Aplicar filtros
-df_filtrado = df[
-    (df["ano"] >= ano_min) & (df["ano"] <= ano_max) &
-    (df["genero_pt"].isin(generos_selecionados)) &
-    (df["score"] >= score_min) & (df["score"] <= score_max) &
-    (df["roi"] >= roi_min) & (df["roi"] <= roi_max)
-]
+# Aplicar filtros de forma segura
+try:
+    df_filtrado = df.copy()
+    
+    # Aplicar filtro de anos
+    df_filtrado = df_filtrado[
+        (df_filtrado["ano"] >= ano_min) & 
+        (df_filtrado["ano"] <= ano_max)
+    ]
+    
+    # Aplicar filtro de gêneros se houver gêneros selecionados
+    if generos_selecionados:
+        df_filtrado = df_filtrado[df_filtrado["genero_pt"].isin(generos_selecionados)]
+    
+    # Aplicar outros filtros
+    df_filtrado = df_filtrado[
+        (df_filtrado["score"] >= score_min) & 
+        (df_filtrado["score"] <= score_max) &
+        (df_filtrado["roi"] >= roi_min) & 
+        (df_filtrado["roi"] <= roi_max)
+    ]
+    
+except Exception as e:
+    st.error(f"Erro ao aplicar filtros: {e}")
+    df_filtrado = df
 
 # =========================
 # CABEÇALHO PRINCIPAL
@@ -509,7 +594,10 @@ with tab1:
     
     # Aplicar busca
     if termo_busca:
-        df_display = df_filtrado[df_filtrado["nome_pt"].str.contains(termo_busca, case=False, na=False)]
+        df_display = df_filtrado[
+            df_filtrado["nome_pt"].str.contains(termo_busca, case=False, na=False) |
+            df_filtrado["genero_pt"].str.contains(termo_busca, case=False, na=False)
+        ]
     else:
         df_display = df_filtrado.copy()
     
@@ -526,34 +614,45 @@ with tab1:
     if ordenacao in ordenacao_map:
         coluna_ordenacao = ordenacao_map[ordenacao]
         ascending = ordenacao in ["Nome A-Z", "Data Antiga"]
-        df_display = df_display.sort_values(coluna_ordenacao, ascending=ascending)
+        
+        if coluna_ordenacao in df_display.columns:
+            df_display = df_display.sort_values(coluna_ordenacao, ascending=ascending)
     
     # Exibir catálogo
     if not df_display.empty:
         # Selecionar colunas para exibição
-        colunas_exibicao = [
-            'nome_pt', 'genero_pt', 'data_completa_pt', 'score', 
-            'revenue', 'budget_x', 'roi', 'success_category'
-        ]
+        colunas_disponiveis = df_display.columns.tolist()
+        colunas_desejadas = ['nome_pt', 'genero_pt', 'data_completa_pt', 'score', 'revenue', 'budget_x', 'roi']
+        colunas_exibicao = [col for col in colunas_desejadas if col in colunas_disponiveis]
         
         # Formatar DataFrame para exibição
         df_exibicao = df_display[colunas_exibicao].copy()
-        df_exibicao['revenue'] = df_exibicao['revenue'].apply(lambda x: f"${x:,.0f}")
-        df_exibicao['budget_x'] = df_exibicao['budget_x'].apply(lambda x: f"${x:,.0f}" if x > 0 else "N/A")
-        df_exibicao['roi'] = df_exibicao['roi'].apply(lambda x: f"{x:.1f}%")
-        df_exibicao['score'] = df_exibicao['score'].apply(lambda x: f"{x:.1f}")
+        
+        # Formatar colunas numéricas
+        if 'revenue' in df_exibicao.columns:
+            df_exibicao['revenue'] = df_exibicao['revenue'].apply(lambda x: f"${x:,.0f}" if pd.notna(x) else "N/A")
+        
+        if 'budget_x' in df_exibicao.columns:
+            df_exibicao['budget_x'] = df_exibicao['budget_x'].apply(lambda x: f"${x:,.0f}" if pd.notna(x) and x > 0 else "N/A")
+        
+        if 'roi' in df_exibicao.columns:
+            df_exibicao['roi'] = df_exibicao['roi'].apply(lambda x: f"{x:.1f}%" if pd.notna(x) else "N/A")
+        
+        if 'score' in df_exibicao.columns:
+            df_exibicao['score'] = df_exibicao['score'].apply(lambda x: f"{x:.1f}" if pd.notna(x) else "N/A")
         
         # Renomear colunas
-        df_exibicao = df_exibicao.rename(columns={
+        mapeamento_nomes = {
             'nome_pt': '🎬 Filme',
             'genero_pt': '🎭 Gênero',
             'data_completa_pt': '📅 Data de Lançamento',
             'score': '⭐ Nota',
             'revenue': '💰 Receita',
             'budget_x': '💸 Orçamento',
-            'roi': '📈 ROI',
-            'success_category': '🏆 Categoria'
-        })
+            'roi': '📈 ROI'
+        }
+        
+        df_exibicao = df_exibicao.rename(columns=mapeamento_nomes)
         
         # Exibir tabela
         st.dataframe(df_exibicao, use_container_width=True, height=600)
@@ -567,46 +666,49 @@ with tab1:
 with tab2:
     st.markdown('<div class="section-header">📊 Análise Detalhada por Gênero</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Estatísticas por gênero
-        st.markdown("#### 📈 Performance por Gênero")
+    if not df_filtrado.empty and 'genero_pt' in df_filtrado.columns:
+        col1, col2 = st.columns(2)
         
-        stats_genero = df_filtrado.groupby('genero_pt').agg({
-            'nome_pt': 'count',
-            'revenue': 'mean',
-            'score': 'mean',
-            'roi': 'mean'
-        }).round(2).sort_values('revenue', ascending=False)
+        with col1:
+            # Estatísticas por gênero
+            st.markdown("#### 📈 Performance por Gênero")
+            
+            stats_genero = df_filtrado.groupby('genero_pt').agg({
+                'nome_pt': 'count',
+                'revenue': 'mean',
+                'score': 'mean',
+                'roi': 'mean'
+            }).round(2).sort_values('revenue', ascending=False)
+            
+            stats_genero = stats_genero.rename(columns={
+                'nome_pt': 'Nº Filmes',
+                'revenue': 'Receita Média',
+                'score': 'Nota Média',
+                'roi': 'ROI Médio'
+            })
+            
+            st.dataframe(stats_genero, use_container_width=True)
         
-        stats_genero = stats_genero.rename(columns={
-            'nome_pt': 'Nº Filmes',
-            'revenue': 'Receita Média',
-            'score': 'Nota Média',
-            'roi': 'ROI Médio'
-        })
+        with col2:
+            # Gráfico de distribuição por gênero
+            st.markdown("#### 🎭 Distribuição por Gênero")
+            
+            contagem_generos = df_filtrado['genero_pt'].value_counts().head(10)
+            
+            if not contagem_generos.empty:
+                fig_generos = px.pie(
+                    values=contagem_generos.values,
+                    names=contagem_generos.index,
+                    title="Top 10 Gêneros Mais Comuns",
+                    color_discrete_sequence=px.colors.qualitative.Set3
+                )
+                st.plotly_chart(fig_generos, use_container_width=True)
+            else:
+                st.info("Não há dados suficientes para o gráfico de gêneros")
         
-        st.dataframe(stats_genero, use_container_width=True)
-    
-    with col2:
-        # Gráfico de distribuição por gênero
-        st.markdown("#### 🎭 Distribuição por Gênero")
+        # Análise de receita por gênero ao longo do tempo
+        st.markdown("#### 📈 Evolução Temporal por Gênero")
         
-        contagem_generos = df_filtrado['genero_pt'].value_counts().head(10)
-        
-        fig_generos = px.pie(
-            values=contagem_generos.values,
-            names=contagem_generos.index,
-            title="Top 10 Gêneros Mais Comuns",
-            color_discrete_sequence=px.colors.qualitative.Set3
-        )
-        st.plotly_chart(fig_generos, use_container_width=True)
-    
-    # Análise de receita por gênero ao longo do tempo
-    st.markdown("#### 📈 Evolução Temporal por Gênero")
-    
-    if not df_filtrado.empty:
         # Agrupar por ano e gênero
         evolucao_genero = df_filtrado.groupby(['ano', 'genero_pt']).agg({
             'revenue': 'mean',
@@ -616,50 +718,59 @@ with tab2:
         # Top 5 gêneros por receita
         top_generos = df_filtrado.groupby('genero_pt')['revenue'].mean().nlargest(5).index
         
-        fig_evolucao = px.line(
-            evolucao_genero[evolucao_genero['genero_pt'].isin(top_generos)],
-            x='ano',
-            y='revenue',
-            color='genero_pt',
-            title="Evolução da Receita Média dos Principais Gêneros",
-            labels={'revenue': 'Receita Média', 'ano': 'Ano', 'genero_pt': 'Gênero'}
-        )
-        st.plotly_chart(fig_evolucao, use_container_width=True)
+        if not top_generos.empty and not evolucao_genero.empty:
+            fig_evolucao = px.line(
+                evolucao_genero[evolucao_genero['genero_pt'].isin(top_generos)],
+                x='ano',
+                y='revenue',
+                color='genero_pt',
+                title="Evolução da Receita Média dos Principais Gêneros",
+                labels={'revenue': 'Receita Média', 'ano': 'Ano', 'genero_pt': 'Gênero'}
+            )
+            st.plotly_chart(fig_evolucao, use_container_width=True)
+        else:
+            st.info("Não há dados suficientes para a análise temporal por gênero")
+    else:
+        st.warning("Dados de gênero não disponíveis para análise")
 
 with tab3:
     st.markdown('<div class="section-header">📅 Linha do Tempo Cinematográfica</div>', unsafe_allow_html=True)
     
     # Filtro por década
-    decadas = sorted(df_filtrado['ano'] // 10 * 10).unique()
-    decada_selecionada = st.selectbox("Selecione a década:", decadas)
+    decadas = sorted((df_filtrado['ano'] // 10 * 10).unique())
     
-    if decada_selecionada:
-        df_decada = df_filtrado[
-            (df_filtrado['ano'] >= decada_selecionada) & 
-            (df_filtrado['ano'] < decada_selecionada + 10)
-        ]
+    if decadas:
+        decada_selecionada = st.selectbox("Selecione a década:", decadas)
         
-        if not df_decada.empty:
-            # Linha do tempo interativa
-            st.markdown(f"#### 🎬 Filmes da Década de {decada_selecionada}s")
+        if decada_selecionada:
+            df_decada = df_filtrado[
+                (df_filtrado['ano'] >= decada_selecionada) & 
+                (df_filtrado['ano'] < decada_selecionada + 10)
+            ]
             
-            # Criar linha do tempo
-            timeline_data = df_decada.nlargest(50, 'revenue')[['nome_pt', 'data_completa_pt', 'revenue', 'genero_pt', 'score']]
+            if not df_decada.empty:
+                # Linha do tempo interativa
+                st.markdown(f"#### 🎬 Filmes da Década de {decada_selecionada}s")
+                
+                # Criar linha do tempo com os filmes mais relevantes
+                timeline_data = df_decada.nlargest(20, 'revenue')[['nome_pt', 'data_completa_pt', 'revenue', 'genero_pt', 'score']]
+                
+                for idx, filme in timeline_data.iterrows():
+                    col_t1, col_t2 = st.columns([3, 1])
+                    
+                    with col_t1:
+                        st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
+                        st.markdown(f"**{filme['nome_pt']}**")
+                        st.markdown(f"🎭 {filme['genero_pt']} | 📅 {filme['data_completa_pt']} | ⭐ {filme['score']:.1f}")
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    with col_t2:
+                        st.metric("💰 Receita", f"${filme['revenue']:,.0f}")
             
-            for idx, filme in timeline_data.iterrows():
-                col_t1, col_t2 = st.columns([3, 1])
-                
-                with col_t1:
-                    st.markdown(f'<div class="insight-box">', unsafe_allow_html=True)
-                    st.markdown(f"**{filme['nome_pt']}**")
-                    st.markdown(f"🎭 {filme['genero_pt']} | 📅 {filme['data_completa_pt']} | ⭐ {filme['score']:.1f}")
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                with col_t2:
-                    st.metric("💰 Receita", f"${filme['revenue']:,.0f}")
-        
-        else:
-            st.info("Nenhum filme encontrado para esta década com os filtros atuais.")
+            else:
+                st.info("Nenhum filme encontrado para esta década com os filtros atuais.")
+    else:
+        st.warning("Não há dados de décadas disponíveis")
 
 with tab4:
     st.markdown('<div class="section-header">🔍 Busca Avançada e Filtros Detalhados</div>', unsafe_allow_html=True)
@@ -669,23 +780,26 @@ with tab4:
     with col1:
         st.markdown("#### 🎯 Filtros Avançados")
         
-        # Filtro por categoria de sucesso
-        categorias = st.multiselect(
-            "Categorias de Sucesso:",
-            options=['Super Blockbuster', 'Blockbuster', 'High', 'Medium', 'Low'],
-            default=['Super Blockbuster', 'Blockbuster', 'High']
-        )
+        # Filtro por categoria de sucesso se existir
+        if 'success_category' in df_filtrado.columns:
+            categorias = st.multiselect(
+                "Categorias de Sucesso:",
+                options=df_filtrado['success_category'].unique(),
+                default=df_filtrado['success_category'].unique()[:3]
+            )
+        else:
+            categorias = []
         
         # Filtro por faixa de orçamento
         orcamento_min, orcamento_max = st.slider(
             "Faixa de Orçamento (USD):",
             float(df_filtrado['budget_x'].min()) if not df_filtrado.empty else 0,
             float(df_filtrado['budget_x'].max()) if not df_filtrado.empty else 100000000,
-            (0.0, 100000000.0)
+            (0.0, float(df_filtrado['budget_x'].max()) if not df_filtrado.empty else 100000000)
         )
         
         # Filtro por mês
-        meses = st.multiselect(
+        meses_selecionados = st.multiselect(
             "Meses de Lançamento:",
             options=list(MESES_PORTUGUES.values()),
             default=list(MESES_PORTUGUES.values())[:3]
@@ -696,24 +810,38 @@ with tab4:
         
         if not df_filtrado.empty:
             # Aplicar filtros adicionais
-            df_avancado = df_filtrado[
-                (df_filtrado['success_category'].isin(categorias)) &
-                (df_filtrado['budget_x'] >= orcamento_min) &
-                (df_filtrado['budget_x'] <= orcamento_max) &
-                (df_filtrado['date_x'].dt.month.isin([k for k, v in MESES_PORTUGUES.items() if v in meses]))
+            df_avancado = df_filtrado.copy()
+            
+            # Aplicar filtro de categoria se selecionado
+            if categorias:
+                df_avancado = df_avancado[df_avancado['success_category'].isin(categorias)]
+            
+            # Aplicar filtro de orçamento
+            df_avancado = df_avancado[
+                (df_avancado['budget_x'] >= orcamento_min) &
+                (df_avancado['budget_x'] <= orcamento_max)
             ]
             
-            st.metric("Filmes Encontrados", len(df_avancado))
-            st.metric("Receita Total", f"${df_avancado['revenue'].sum():,.0f}")
-            st.metric("ROI Médio", f"{df_avancado['roi'].mean():.1f}%")
-            st.metric("Nota Média", f"{df_avancado['score'].mean():.2f}")
+            # Aplicar filtro de meses
+            if meses_selecionados:
+                meses_numeros = [k for k, v in MESES_PORTUGUES.items() if v in meses_selecionados]
+                df_avancado = df_avancado[df_avancado['mes'].isin(meses_numeros)]
             
-            # Top 3 filmes
             if not df_avancado.empty:
+                st.metric("Filmes Encontrados", len(df_avancado))
+                st.metric("Receita Total", f"${df_avancado['revenue'].sum():,.0f}")
+                st.metric("ROI Médio", f"{df_avancado['roi'].mean():.1f}%")
+                st.metric("Nota Média", f"{df_avancado['score'].mean():.2f}")
+                
+                # Top 3 filmes
                 st.markdown("#### 🏆 Top 3 Filmes")
                 top3 = df_avancado.nlargest(3, 'revenue')
                 for idx, filme in top3.iterrows():
                     st.markdown(f"**{filme['nome_pt']}** - ${filme['revenue']:,.0f}")
+            else:
+                st.warning("Nenhum filme encontrado com os filtros aplicados")
+        else:
+            st.warning("Nenhum dado disponível para os filtros")
 
 # =========================
 # RODAPÉ
