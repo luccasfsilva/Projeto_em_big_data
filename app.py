@@ -403,8 +403,6 @@ def carregar_dados_completos():
         df["lucro"] = df["revenue"] - df["budget_x"]
         
         # Categorizar sucesso
-       import numpy as np
-
 try:
     revenue_q = df['revenue'].quantile([0.3, 0.5, 0.7, 0.9])
 
