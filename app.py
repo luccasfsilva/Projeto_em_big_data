@@ -403,23 +403,36 @@ def carregar_dados_completos():
         df["lucro"] = df["revenue"] - df["budget_x"]
         
         # Categorizar sucesso
-        revenue_q = df['revenue'].quantile([0.3, 0.5, 0.7, 0.9])
-        conditions = [
-            (df['revenue'] >= revenue_q[0.9]),
-            (df['revenue'] >= revenue_q[0.7]),
-            (df['revenue'] >= revenue_q[0.5]),
-            (df['revenue'] >= revenue_q[0.3]),
-            (df['revenue'] < revenue_q[0.3])
-        ]
-        choices = ['Super Blockbuster', 'Blockbuster', 'High', 'Medium', 'Low']
-        df['success_category'] = np.select(conditions, choices, default='Low')
-        
-        st.success(f"✅ Dados carregados com sucesso! {len(df)} filmes processados.")
-        return df
-        
-    except Exception as e:
-        st.error(f"❌ Erro crítico ao carregar dados: {str(e)}")
-        return None
+       import numpy as np
+
+try:
+    revenue_q = df['revenue'].quantile([0.3, 0.5, 0.7, 0.9])
+
+    conditions = [
+        (df['revenue'] >= revenue_q.loc[0.9]),
+        (df['revenue'] >= revenue_q.loc[0.7]),
+        (df['revenue'] >= revenue_q.loc[0.5]),
+        (df['revenue'] >= revenue_q.loc[0.3]),
+        (df['revenue'] <  revenue_q.loc[0.3])
+    ]
+
+    choices = [
+        'Super Blockbuster',
+        'Blockbuster',
+        'High',
+        'Medium',
+        'Low'
+    ]
+
+    df['success_category'] = np.select(conditions, choices, default='Low')
+
+    st.success(f"✅ Dados carregados com sucesso! {len(df)} filmes processados.")
+    return df
+
+except Exception as e:
+    st.error(f"❌ Erro crítico ao carregar dados: {str(e)}")
+    return None
+
 
 # =========================
 # INTERFACE PRINCIPAL
