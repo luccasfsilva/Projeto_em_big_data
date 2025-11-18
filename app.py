@@ -374,21 +374,23 @@ def carregar_dados_completos():
                 st.error("❌ Coluna 'names' não encontrada no dataset")
                 df["nome_pt"] = "Nome não disponível"
             
-            # Traduzir gêneros - verificar colunas possíveis
-            genre_columns = ['genre', 'genres', 'category', 'type']
-            genre_column = None
-            
-            for col in genre_columns:
-                if col in df.columns:
-                    genre_column = col
-                    break
-            
-            if genre_column:
-                df["genero_pt"] = df[genre_column].apply(tradutor.traduzir_genero)
-                st.success(f"✅ Gêneros traduzidos da coluna: {genre_column}")
-            else:
-                st.warning("⚠️ Nenhuma coluna de gênero encontrada. Usando valor padrão.")
-                df["genero_pt"] = "Gênero não disponível"
+           
+                    # Traduzir gêneros - verificar colunas possíveis
+        genre_columns = ['genre', 'genres', 'category', 'type']
+        genre_column = None
+
+        for col in genre_columns:
+            if col in df.columns:
+                genre_column = col
+                break
+
+        if genre_column:
+            df["genero_pt"] = df[genre_column].apply(tradutor.traduzir_genero)
+            st.success(f"✅ Gêneros traduzidos da coluna: {genre_column}")
+        else:
+            st.warning("⚠️ Nenhuma coluna de gênero encontrada. Usando valor padrão.")
+            df["genero_pt"] = "Gênero não disponível"
+
             
             # Adicionar data formatada em português
             df["data_completa_pt"] = df["date_x"].apply(tradutor.formatar_data_completa)
