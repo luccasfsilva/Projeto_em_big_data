@@ -636,12 +636,56 @@ with tab3:
         else:
             st.info("Não há dados de orçamento suficientes")
     
-    st.markdown("#### Mapa de Correlações")
-    fig_correlacao = criar_grafico_correlacao(df_filtrado)
-    if fig_correlacao:
-        st.plotly_chart(fig_correlacao, use_container_width=True)
+    # Receita total por país
+    revenue_country = df_filtrado.groupby("country")["revenue"].sum().reset_index()
+    revenue_country.columns = ["country_raw", "Total Revenue"]
+
+    # Detecta se 'country_raw' já está em ISO3
+    sample_lengths = revenue_country["country_raw"].dropna().astype(str).apply(len)
+    is_mostly_iso3 = False
+    if not sample_lengths.empty:
+        is_mostly_iso3 = (sample_lengths.median() == 3)
+
+    if is_mostly_iso3:
+        revenue_country["country_iso3"] = revenue_country["country_raw"].astype(str)
     else:
-        st.info("Não há dados numéricos suficientes para correlação")
+        # tenta converter ISO2 -> ISO3 se pycountry estiver disponível
+        if HAS_PYCOUNTRY:
+            def iso2_to_iso3(iso2):
+                try:
+                    if not isinstance(iso2, str):
+                        return None
+                    iso2 = iso2.strip()
+                    if len(iso2) == 3:  # talvez já seja ISO3
+                        return iso2.upper()
+                    return pycountry.countries.get(alpha_2=iso2.upper()).alpha_3
+                except Exception:
+                    return None
+            revenue_country["country_iso3"] = revenue_country["country_raw"].apply(iso2_to_iso3)
+        else:
+            # sem pycountry e sem ISO3 -> não conseguimos criar o mapa
+            revenue_country["country_iso3"] = None
+
+    revenue_country = revenue_country.dropna(subset=["country_iso3"])
+
+    if revenue_country.empty:
+        st.warning(
+            "Não foi possível gerar o mapa de receita por país.\n"
+            "- Se sua coluna 'country' contém códigos ISO2, instale o pacote 'pycountry' (adicione em requirements.txt) ou\n"
+            "- forneça códigos ISO-3 na coluna 'country'."
+        )
+    else:
+        graf4 = px.choropleth(
+            revenue_country,
+            locations="country_iso3",
+            color="Total Revenue",
+            color_continuous_scale="Plasma",
+            title="Receita Total por País",
+            labels={"Total Revenue": "Receita Total", "country_iso3": "País"}
+        )
+        st.plotly_chart(graf4, use_container_width=True)
+
+st.markdown("---")
 
 with tab4:
     st.markdown('<div class="section-header">🌎 Distribuições e Categorias</div>', unsafe_allow_html=True)
