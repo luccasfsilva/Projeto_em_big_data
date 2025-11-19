@@ -71,7 +71,7 @@ st.markdown("""
 def carregar_dados():
     CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
     try:
-        df = pd.read_csv(CSSV_URL, parse_dates=['date_x'])
+        df = pd.read_csv(CSV_URL, parse_dates=['date_x'])  # CORRIGIDO: CSV_URL em vez de CSSV_URL
         
         # Limpeza e transformação
         df["revenue"] = pd.to_numeric(df.get("revenue"), errors="coerce").fillna(0)
