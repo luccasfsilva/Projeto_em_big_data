@@ -355,26 +355,73 @@ def criar_grafico_media_notas_ano(df):
     return fig
 
 def criar_grafico_correlacao(df):
-    """Mapa de calor de correlações - Gráfico 7 do Colab"""
+    """
+    Mapa mundi baseado em valores agregados por país.
+    Aqui substituímos o 'mapa de calor de correlações' por um choropleth global.
+    """
+
+    # Verifica presença da coluna 'country'
+    if "country" not in df.columns:
+        st.warning("A coluna 'country' não foi encontrada no dataframe.")
+        return None
+
+    # Escolhe a primeira coluna numérica disponível
     numeric_cols = df.select_dtypes(include=[np.number]).columns
-    if len(numeric_cols) > 1:
-        corr_matrix = df[numeric_cols].corr()
-        
-        fig = px.imshow(
-            corr_matrix,
-            title='🔥 Mapa de Calor de Correlações',
-            color_continuous_scale='RdBu_r',
-            aspect='auto',
-            text_auto=True
-        )
-        fig.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white'),
-            height=500
-        )
-        return fig
-    return None
+    if len(numeric_cols) == 0:
+        st.warning("Nenhuma coluna numérica encontrada para gerar o mapa.")
+        return None
+
+    valor_col = numeric_cols[0]  # você pode alterar para outro nome
+    df_country = df.groupby("country")[valor_col].sum().reset_index()
+    df_country.columns = ["country_raw", "value"]
+
+    # Detecta se já está em ISO3
+    sample_lengths = df_country["country_raw"].dropna().astype(str).apply(len)
+    is_iso3 = (not sample_lengths.empty and sample_lengths.median() == 3)
+
+    import pycountry
+    def iso2_to_iso3(code):
+        try:
+            if isinstance(code, str) and len(code) == 2:
+                return pycountry.countries.get(alpha_2=code.upper()).alpha_3
+            if isinstance(code, str) and len(code) == 3:
+                return code.upper()
+        except:
+            return None
+
+    df_country["iso3"] = df_country["country_raw"].apply(iso2_to_iso3)
+    df_country = df_country.dropna(subset=["iso3"])
+
+    if df_country.empty:
+        st.warning("Não foi possível gerar o mapa mundi. Verifique os códigos de país.")
+        return None
+
+    # ========== MAPA MUNDI ==========
+    fig = px.choropleth(
+        df_country,
+        locations="iso3",
+        color="value",
+        hover_name="iso3",
+        color_continuous_scale="Plasma",
+        projection="natural earth",
+        title=f"🌍 Mapa Mundi – Valor por País ({valor_col})",
+        labels={"value": valor_col}
+    )
+
+    fig.update_geos(
+        showcountries=True,
+        showcoastlines=True,
+        showland=True,
+        landcolor="lightgray"
+    )
+
+    fig.update_layout(
+        margin=dict(r=0, t=50, l=0, b=0),
+        height=520
+    )
+
+    return fig
+
 
 def criar_grafico_decadas(df):
     """Análise por décadas - Gráfico 8 do Colab"""
