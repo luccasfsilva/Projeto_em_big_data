@@ -1,5 +1,5 @@
 import pandas as pd
-from deep_translator import GoogleTranslator
+import GoogleTranslator
 import time
 
 # Criando o DataFrame com os dados fornecidos
