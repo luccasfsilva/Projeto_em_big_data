@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -6,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import warnings
+import pycountry # Adicionado: Necessário para o mapa mundi no Plotly
 warnings.filterwarnings('ignore')
 
 # =========================
@@ -71,7 +71,8 @@ st.markdown("""
 def carregar_dados():
     CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
     try:
-        df = pd.read_csv(CSV_URL, parse_dates=['date_x'])  # CORRIGIDO: CSV_URL em vez de CSSV_URL
+        # CORRIGIDO: O arquivo pode ter sido renomeado, mas usaremos a URL fornecida
+        df = pd.read_csv(CSV_URL, parse_dates=['date_x'])
         
         # Limpeza e transformação
         df["revenue"] = pd.to_numeric(df.get("revenue"), errors="coerce").fillna(0)
@@ -101,7 +102,7 @@ def carregar_dados():
         
         return df
     except Exception as e:
-        st.error(f"❌ Erro ao carregar o CSV.\nDetalhe: {e}")
+        st.error(f"❌ Erro ao carregar o CSV. Verifique a URL ou a estrutura do arquivo.")
         st.stop()
 
 df = carregar_dados()
@@ -232,7 +233,6 @@ def traduzir_nome_filme(nome_original):
 def criar_grafico_top_filmes(df, top_n=10):
     """Top filmes por receita - Gráfico 1 do Colab"""
     top_filmes = df.nlargest(top_n, 'revenue')[['names', 'revenue', 'score']].copy()
-    top_filmes['names'] = top_filmes['names'].apply(traduzir_nome_filme)
     
     fig = px.bar(
         top_filmes,
@@ -263,7 +263,7 @@ def criar_grafico_dispercao_nota_receita(df):
         title='🎯 Relação entre Nota e Receita',
         labels={'score': 'Nota IMDb', 'revenue': 'Receita (USD)'},
         hover_data=['names'],
-        # Removido trendline='lowess' que causava o erro
+        # Removido trendline que causava o erro
         color_discrete_sequence=['#FF6B6B']
     )
     fig.update_layout(
@@ -356,44 +356,37 @@ def criar_grafico_media_notas_ano(df):
 
 def criar_grafico_correlacao(df):
     """
-    Mapa mundi baseado em valores agregados por país.
-    Aqui substituímos o 'mapa de calor de correlações' por um choropleth global.
+    Mapa Mundi de Receita por País. Substitui o mapa de calor de correlações
+    usando a coluna 'country' e o pacote 'pycountry' para códigos ISO3.
     """
 
     # Verifica presença da coluna 'country'
-    if "country" not in df.columns:
-        st.warning("A coluna 'country' não foi encontrada no dataframe.")
+    if "country" not in df.columns or df["country"].isnull().all():
+        st.warning("A coluna 'country' não foi encontrada ou está vazia.")
         return None
 
-    # Escolhe a primeira coluna numérica disponível
-    numeric_cols = df.select_dtypes(include=[np.number]).columns
-    if len(numeric_cols) == 0:
-        st.warning("Nenhuma coluna numérica encontrada para gerar o mapa.")
-        return None
-
-    valor_col = numeric_cols[0]  # você pode alterar para outro nome
-    df_country = df.groupby("country")[valor_col].sum().reset_index()
+    # Agrega a receita total por país
+    df_country = df.groupby("country")["revenue"].sum().reset_index()
     df_country.columns = ["country_raw", "value"]
 
-    # Detecta se já está em ISO3
-    sample_lengths = df_country["country_raw"].dropna().astype(str).apply(len)
-    is_iso3 = (not sample_lengths.empty and sample_lengths.median() == 3)
-
-    import pycountry
     def iso2_to_iso3(code):
+        """Converte códigos de país ISO2 para ISO3 usando pycountry."""
         try:
             if isinstance(code, str) and len(code) == 2:
+                # Tenta converter ISO2 para ISO3
                 return pycountry.countries.get(alpha_2=code.upper()).alpha_3
             if isinstance(code, str) and len(code) == 3:
+                # Assume que já é ISO3
                 return code.upper()
         except:
-            return None
+            pass
+        return None
 
     df_country["iso3"] = df_country["country_raw"].apply(iso2_to_iso3)
     df_country = df_country.dropna(subset=["iso3"])
 
     if df_country.empty:
-        st.warning("Não foi possível gerar o mapa mundi. Verifique os códigos de país.")
+        st.warning("Não foi possível gerar o mapa mundi. Verifique os códigos de país (ISO2 ou ISO3) na coluna 'country'.")
         return None
 
     # ========== MAPA MUNDI ==========
@@ -401,23 +394,27 @@ def criar_grafico_correlacao(df):
         df_country,
         locations="iso3",
         color="value",
-        hover_name="iso3",
+        hover_name="country_raw",
         color_continuous_scale="Plasma",
         projection="natural earth",
-        title=f"🌍 Mapa Mundi – Valor por País ({valor_col})",
-        labels={"value": valor_col}
+        title=f"🌍 Receita Total por País",
+        labels={"value": "Receita Total (USD)"}
     )
 
     fig.update_geos(
         showcountries=True,
         showcoastlines=True,
         showland=True,
-        landcolor="lightgray"
+        landcolor="#2d2d2d", # Cor escura para o continente
+        oceancolor="#1a1a1a" # Cor escura para o oceano
     )
 
     fig.update_layout(
         margin=dict(r=0, t=50, l=0, b=0),
-        height=520
+        height=520,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font=dict(color='white')
     )
 
     return fig
@@ -428,10 +425,13 @@ def criar_grafico_decadas(df):
     df_copy = df.copy()
     df_copy['decada'] = (df_copy['ano'] // 10) * 10
     decada_stats = df_copy.groupby('decada').agg({
-        'revenue': 'mean',
+        'revenue': 'sum', # Alterado para soma para refletir o total da década
         'score': 'mean',
         'names': 'count'
     }).reset_index()
+    
+    # Filtra décadas com dados significativos
+    decada_stats = decada_stats[decada_stats['decada'] > 1900]
     
     fig = go.Figure()
     fig.add_trace(go.Bar(
@@ -440,23 +440,28 @@ def criar_grafico_decadas(df):
         name='Número de Filmes',
         marker_color='#4ECDC4'
     ))
+    
+    # Normaliza a receita total para o eixo secundário
+    max_names = decada_stats['names'].max() if decada_stats['names'].max() > 0 else 1
+    max_revenue = decada_stats['revenue'].max() if decada_stats['revenue'].max() > 0 else 1
+    
     fig.add_trace(go.Scatter(
         x=decada_stats['decada'],
-        y=decada_stats['revenue'] / max(decada_stats['revenue'].max(), 1) * decada_stats['names'].max(),
-        name='Receita Média (escala ajustada)',
+        y=decada_stats['revenue'] / max_revenue * max_names, # Escala ajustada
+        name='Receita Total (escala ajustada)',
         line=dict(color='#FF6B6B', width=3),
         yaxis='y2'
     ))
     
     fig.update_layout(
-        title='📊 Análise por Décadas: Quantidade de Filmes e Receita Média',
+        title='📊 Análise por Décadas: Quantidade de Filmes e Receita Total',
         xaxis_title='Década',
         yaxis_title='Número de Filmes',
         yaxis2=dict(
-            title='Receita Média (escala ajustada)',
+            title='Receita Total (escala ajustada)',
             overlaying='y',
             side='right',
-            range=[0, decada_stats['names'].max()]
+            range=[0, max_names * 1.05] # Ajusta o limite superior
         ),
         plot_bgcolor='rgba(0,0,0,0)',
         paper_bgcolor='rgba(0,0,0,0)',
@@ -466,7 +471,7 @@ def criar_grafico_decadas(df):
 
 def criar_grafico_sazonalidade(df):
     """Análise de sazonalidade - Gráfico 9 do Colab"""
-    if 'mes' in df.columns:
+    if 'mes' in df.columns and not df['mes'].isnull().all():
         sazonalidade = df.groupby('mes').agg({
             'revenue': 'mean',
             'score': 'mean',
@@ -474,17 +479,18 @@ def criar_grafico_sazonalidade(df):
         }).reset_index()
         
         meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec']
+                 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         
         fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=meses,
+            x=[meses[m-1] for m in sazonalidade['mes']],
             y=sazonalidade['revenue'],
             name='Receita Média',
-            line=dict(color='#4ECDC4', width=3)
+            line=dict(color='#4ECDC4', width=3),
+            yaxis='y1'
         ))
         fig.add_trace(go.Bar(
-            x=meses,
+            x=[meses[m-1] for m in sazonalidade['mes']],
             y=sazonalidade['names'],
             name='Número de Filmes',
             marker_color='rgba(255, 107, 107, 0.6)',
@@ -517,7 +523,6 @@ def criar_grafico_orcamento_vs_receita(df):
             y='revenue',
             title='💰 Relação entre Orçamento e Receita',
             labels={'budget_x': 'Orçamento (USD)', 'revenue': 'Receita (USD)'},
-            # Removido trendline que causava erro
             hover_data=['names', 'score'],
             color_discrete_sequence=['#FFA726']
         )
@@ -557,12 +562,20 @@ with st.sidebar:
     
     # Filtro de anos
     st.markdown("#### 📅 Filtro por Ano")
-    anos_disponiveis = sorted(df["ano"].unique())
-    ano_min, ano_max = st.select_slider(
-        "Selecione o intervalo de anos:",
-        options=anos_disponiveis,
-        value=(min(anos_disponiveis), max(anos_disponiveis))
-    )
+    # Filtra anos > 0 para evitar lixo de data
+    anos_disponiveis = sorted(df[df["ano"] > 0]["ano"].unique())
+    if len(anos_disponiveis) > 0:
+        ano_min_default = min(anos_disponiveis)
+        ano_max_default = max(anos_disponiveis)
+        ano_min, ano_max = st.select_slider(
+            "Selecione o intervalo de anos:",
+            options=anos_disponiveis,
+            value=(ano_min_default, ano_max_default)
+        )
+    else:
+        st.warning("Dados de ano inválidos ou incompletos.")
+        ano_min, ano_max = 0, datetime.now().year
+
     
     st.markdown("---")
     
@@ -580,12 +593,12 @@ with st.sidebar:
     
     # Filtro de receita
     st.markdown("#### 💰 Filtro por Receita")
-    receita_max = df["revenue"].max()
+    receita_max_global = df["revenue"].max()
     receita_min, receita_max = st.slider(
         "Selecione a faixa de receita:",
         min_value=0.0,
-        max_value=float(receita_max),
-        value=(0.0, float(receita_max)),
+        max_value=float(receita_max_global),
+        value=(0.0, float(receita_max_global)),
         step=1_000_000.0,
         format="$%.0f"
     )
@@ -598,11 +611,15 @@ df_filtrado = df[
     (df["score"] <= score_max) &
     (df["revenue"] >= receita_min) &
     (df["revenue"] <= receita_max)
-]
+].copy()
 
 # Aplicar tradução aos nomes dos filmes
-df_filtrado = df_filtrado.copy()
 df_filtrado["names"] = df_filtrado["names"].apply(traduzir_nome_filme)
+
+if df_filtrado.empty:
+    st.error("Nenhum dado encontrado com os filtros selecionados.")
+    st.stop()
+
 
 # =========================
 # CABEÇALHO
@@ -682,97 +699,8 @@ with tab3:
             st.plotly_chart(fig_orcamento_receita, use_container_width=True)
         else:
             st.info("Não há dados de orçamento suficientes")
-    
-   col_g1, col_g2 = st.columns(2)
 
-with col_g1:
-    top_n = 10
-    df_top_revenue = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
-    graf1 = px.bar(
-        df_top_revenue,
-        x="names",
-        y="revenue",
-        title=f"Top {top_n} Filmes por Receita",
-        labels={"names": "Filme", "revenue": "Receita"}
-    )
-    st.plotly_chart(graf1, use_container_width=True)
-
-with col_g2:
-    graf2 = px.histogram(
-        df_filtrado,
-        x="score",
-        nbins=20,
-        title="Distribuição das Notas dos Filmes",
-        labels={"score": "Nota", "count": "Frequência"}
-    )
-    st.plotly_chart(graf2, use_container_width=True)
-
-col_g4 = st.columns(2)
-
-with col_g4:
-    # Receita total por país
-revenue_country = df_filtrado.groupby("country")["revenue"].sum().reset_index()
-revenue_country.columns = ["country_raw", "Total Revenue"]
-
-# Detecta se 'country_raw' já está em ISO3
-sample_lengths = revenue_country["country_raw"].dropna().astype(str).apply(len)
-is_mostly_iso3 = False
-if not sample_lengths.empty:
-    is_mostly_iso3 = (sample_lengths.median() == 3)
-
-if is_mostly_iso3:
-    revenue_country["country_iso3"] = revenue_country["country_raw"].astype(str)
-else:
-    # Tenta converter ISO2 -> ISO3 se pycountry estiver disponível
-    if HAS_PYCOUNTRY:
-        def iso2_to_iso3(iso2):
-            try:
-                if not isinstance(iso2, str):
-                    return None
-                iso2 = iso2.strip()
-                if len(iso2) == 3:  # talvez já seja ISO3
-                    return iso2.upper()
-                return pycountry.countries.get(alpha_2=iso2.upper()).alpha_3
-            except Exception:
-                return None
-
-        revenue_country["country_iso3"] = revenue_country["country_raw"].apply(iso2_to_iso3)
-    else:
-        # Sem pycountry e sem ISO3 -> não conseguimos criar o mapa
-        revenue_country["country_iso3"] = None
-
-# Remove países sem ISO3
-revenue_country = revenue_country.dropna(subset=["country_iso3"])
-
-# Se vazio, avisa o usuário
-if revenue_country.empty:
-    st.warning(
-        "Não foi possível gerar o mapa de receita por país.\n"
-        "- Se sua coluna 'country' contém códigos ISO2, instale o pacote 'pycountry' (adicione em requirements.txt) ou\n"
-        "- forneça códigos ISO-3 na coluna 'country'."
-    )
-
-else:
-    # ======== MAPA MUNDI ========
-    graf4 = px.choropleth(
-        revenue_country,
-        locations="country_iso3",
-        color="Total Revenue",
-        hover_name="country_iso3",
-        color_continuous_scale="Plasma",
-        projection="natural earth",      # <<< deixa com cara de mapa mundi
-        title="Receita Total por País",
-        labels={"Total Revenue": "Receita Total"}
-    )
-
-    graf4.update_geos(showcountries=True, showcoastlines=True, showland=True, landcolor="lightgray")
-    graf4.update_layout(margin={"r":0,"t":50,"l":0,"b":0})
-
-    st.plotly_chart(graf4, use_container_width=True)
-
-st.markdown("---")
-
-    with tab4:
+with tab4:
     st.markdown('<div class="section-header">🌎 Distribuições e Categorias</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
@@ -790,6 +718,7 @@ st.markdown("---")
                 values=success_dist.values,
                 names=success_dist.index,
                 title="Distribuição por Categoria de Sucesso",
+                hole=0.4,
                 color_discrete_sequence=px.colors.qualitative.Set3
             )
             fig_success.update_layout(
@@ -800,6 +729,15 @@ st.markdown("---")
             st.plotly_chart(fig_success, use_container_width=True)
         else:
             st.info("Não há dados para categorias de sucesso")
+            
+    st.markdown("---")
+    st.markdown("#### Distribuição Geográfica de Receita")
+    # Usando a função criar_grafico_correlacao para o Mapa Mundi
+    fig_mapa = criar_grafico_correlacao(df_filtrado)
+    if fig_mapa:
+        st.plotly_chart(fig_mapa, use_container_width=True)
+    else:
+        st.info("O mapa mundi não pôde ser gerado. Verifique a coluna 'country'.")
 
 with tab5:
     st.markdown('<div class="section-header">📊 Análise Financeira Detalhada</div>', unsafe_allow_html=True)
@@ -814,16 +752,20 @@ with tab5:
             roi_medio = df_filtrado["roi"].mean()
             orcamento_medio = df_filtrado[df_filtrado["budget_x"] > 0]["budget_x"].mean()
             
+            st.markdown('<div class="metric-card">', unsafe_allow_html=True)
             st.metric("💰 Receita Total", f"${receita_total:,.0f}")
             st.metric("📊 Receita Média", f"${receita_media:,.0f}")
             st.metric("📈 ROI Médio", f"{roi_medio:.1f}%")
             st.metric("💸 Orçamento Médio", f"${orcamento_medio:,.0f}" if not pd.isna(orcamento_medio) else "N/A")
+            st.markdown('</div>', unsafe_allow_html=True)
+
         else:
             st.info("Não há dados financeiros disponíveis")
     
     with col2:
         st.markdown("#### Top Filmes por ROI")
-        df_roi = df_filtrado[df_filtrado['roi'] > 0].nlargest(10, 'roi')
+        # Filtra filmes com ROI > 0 e orçamento > 0 para evitar distorções
+        df_roi = df_filtrado[(df_filtrado['roi'] > 0) & (df_filtrado['budget_x'] > 0)].nlargest(10, 'roi')
         if not df_roi.empty:
             fig_roi = px.bar(
                 df_roi,
@@ -844,7 +786,7 @@ with tab5:
             )
             st.plotly_chart(fig_roi, use_container_width=True)
         else:
-            st.info("Não há dados de ROI disponíveis")
+            st.info("Não há dados de ROI positivos disponíveis")
 
 with tab6:
     st.markdown('<div class="section-header">📅 Análise de Sazonalidade</div>', unsafe_allow_html=True)
@@ -853,7 +795,7 @@ with tab6:
     if fig_sazonalidade:
         st.plotly_chart(fig_sazonalidade, use_container_width=True)
     else:
-        st.info("Dados de sazonalidade não disponíveis")
+        st.info("Dados de sazonalidade não disponíveis (verifique a coluna 'date_x')")
     
     # Análise adicional de meses
     if 'mes' in df_filtrado.columns:
@@ -861,7 +803,8 @@ with tab6:
         
         with col1:
             meses_ordenados = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
-                              'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec']
+                               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+            # CORREÇÃO: Usar a coluna 'mes' para agrupar, mas usar o mapeamento para Plotly
             receita_mensal = df_filtrado.groupby('mes')['revenue'].mean().reset_index()
             
             if len(receita_mensal) > 0:
@@ -877,7 +820,8 @@ with tab6:
                 fig_mensal.update_layout(
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white')
+                    font=dict(color='white'),
+                    xaxis={'categoryorder':'array', 'categoryarray': meses_ordenados} # Ordena os meses
                 )
                 st.plotly_chart(fig_mensal, use_container_width=True)
         
@@ -897,135 +841,11 @@ with tab6:
                 fig_count_mensal.update_layout(
                     plot_bgcolor='rgba(0,0,0,0)',
                     paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='white')
+                    font=dict(color='white'),
+                    xaxis={'categoryorder':'array', 'categoryarray': meses_ordenados} # Ordena os meses
                 )
                 st.plotly_chart(fig_count_mensal, use_container_width=True)
-
+                
 with tab7:
-    st.markdown('<div class="section-header">🔍 Base de Dados Completa</div>', unsafe_allow_html=True)
-    
-    # Sistema de busca
-    col1, col2, col3 = st.columns([2, 2, 1])
-    with col1:
-        search_term = st.text_input("🔍 Buscar filme:", placeholder="Digite o nome do filme...")
-    with col2:
-        sort_by = st.selectbox(
-            "Ordenar por:",
-            ["Receita", "Pontuação", "Ano de Lançamento", "Nome do Filme"],
-            index=0
-        )
-    with col3:
-        resultados_por_pagina = st.selectbox("Itens por página:", [10, 25, 50, 100], index=0)
-
-    # Preparar dados para exibição
-    df_display = df_filtrado.copy().rename(columns={
-        "names": "Nome do Filme",
-        "orig_lang": "Idioma Original",
-        "revenue": "Receita",
-        "score": "Pontuação",
-        "ano": "Ano de Lançamento",
-        "date_x": "Data de Lançamento",
-        "country": "País de Origem",
-        "genre": "Gênero",
-        "budget_x": "Orçamento",
-        "roi": "ROI"
-    })
-
-    # Formatações
-    if "Data de Lançamento" in df_display.columns:
-        df_display["Data de Lançamento"] = pd.to_datetime(
-            df_display["Data de Lançamento"], errors="coerce"
-        ).dt.strftime("%d/%m/%Y")
-
-    df_display["Receita"] = df_display["Receita"].apply(
-        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
-    )
-
-    df_display["Pontuação"] = df_display["Pontuação"].apply(
-        lambda x: f"{x:.1f}" if pd.notnull(x) else "N/A"
-    )
-
-    df_display["ROI"] = df_display["ROI"].apply(
-        lambda x: f"{x:.1f}%" if pd.notnull(x) else "N/A"
-    )
-
-    df_display["Orçamento"] = df_display["Orçamento"].apply(
-        lambda x: f"${x:,.0f}" if pd.notnull(x) and x > 0 else "N/A"
-    )
-
-    # Filtro de busca
-    if search_term:
-        df_display = df_display[
-            df_display["Nome do Filme"].str.contains(search_term, case=False, na=False) |
-            df_display["Gênero"].str.contains(search_term, case=False, na=False)
-        ]
-
-    # Ordenação
-    sort_map = {
-        "Receita": "Receita",
-        "Pontuação": "Pontuação", 
-        "Ano de Lançamento": "Ano de Lançamento",
-        "Nome do Filme": "Nome do Filme"
-    }
-    
-    if sort_by in sort_map:
-        ascending = sort_by == "Nome do Filme"
-        # Converter para numérico se necessário para ordenação
-        if sort_by == "Receita":
-            df_display["Receita_Num"] = df_display["Receita"].replace('[\$,]', '', regex=True).replace('N/A', '0').astype(float)
-            df_display = df_display.sort_values(by="Receita_Num", ascending=ascending)
-        elif sort_by == "Pontuação":
-            df_display["Pontuação_Num"] = df_display["Pontuação"].replace('N/A', '0').astype(float)
-            df_display = df_display.sort_values(by="Pontuação_Num", ascending=ascending)
-        else:
-            df_display = df_display.sort_values(by=sort_map[sort_by], ascending=ascending)
-
-    # Colunas a exibir
-    colunas_para_mostrar = [
-        "Nome do Filme", "Gênero", "Idioma Original", "País de Origem",
-        "Pontuação", "Receita", "Orçamento", "ROI", "Ano de Lançamento"
-    ]
-
-    # Sistema de paginação
-    total_resultados = len(df_display)
-    if total_resultados > 0:
-        total_paginas = (total_resultados + resultados_por_pagina - 1) // resultados_por_pagina
-        pagina_atual = st.number_input("Página:", min_value=1, max_value=max(total_paginas, 1), value=1)
-        
-        inicio = (pagina_atual - 1) * resultados_por_pagina
-        fim = inicio + resultados_por_pagina
-        
-        df_paginado = df_display.iloc[inicio:fim]
-        
-        st.caption(f"Mostrando {inicio + 1}-{min(fim, total_resultados)} de {total_resultados} resultados")
-        
-        st.dataframe(
-            df_paginado[colunas_para_mostrar],
-            use_container_width=True,
-            height=400,
-            hide_index=True
-        )
-        
-        if st.button("📥 Exportar Dados para CSV"):
-            csv = df_display[colunas_para_mostrar].to_csv(index=False)
-            st.download_button(
-                label="Baixar CSV",
-                data=csv,
-                file_name="filmes_completo.csv",
-                mime="text/csv"
-            )
-    else:
-        st.warning("🎭 Nenhum filme encontrado com os filtros aplicados.")
-
-# =========================
-# RODAPÉ
-# =========================
-st.markdown("---")
-st.markdown(
-    f"<div style='text-align: center; color: #666;'>"
-    f"📊 Dashboard CineAnalytics Pro • Todos os Gráficos do Colab • "
-    f"Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')} • "
-    f"🎬 {len(df_filtrado):,} filmes analisados"
-    f"</div>",
-    unsafe_allow_html=True
-)
+    st.markdown('<div class="section-header">🔍 Dados Completos</div>', unsafe_allow_html=True)
+    st.dataframe(df_filtrado)
