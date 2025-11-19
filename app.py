@@ -660,19 +660,7 @@ with col_g2:
     )
     st.plotly_chart(graf2, use_container_width=True)
 
-col_g3, col_g4 = st.columns(2)
-
-with col_g3:
-    contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(10).reset_index()
-    contagem_idiomas.columns = ["Idioma Original", "Número de Filmes"]
-    graf3 = px.pie(
-        contagem_idiomas,
-        values="Número de Filmes",
-        names="Idioma Original",
-        title="Top 10 Idiomas Originais",
-        hole=0.3
-    )
-    st.plotly_chart(graf3, use_container_width=True)
+col_g4 = st.columns(2)
 
 with col_g4:
     # Receita total por país
