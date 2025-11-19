@@ -636,6 +636,45 @@ with tab3:
         else:
             st.info("Não há dados de orçamento suficientes")
     
+   col_g1, col_g2 = st.columns(2)
+
+with col_g1:
+    top_n = 10
+    df_top_revenue = df_filtrado.sort_values(by="revenue", ascending=False).head(top_n)
+    graf1 = px.bar(
+        df_top_revenue,
+        x="names",
+        y="revenue",
+        title=f"Top {top_n} Filmes por Receita",
+        labels={"names": "Filme", "revenue": "Receita"}
+    )
+    st.plotly_chart(graf1, use_container_width=True)
+
+with col_g2:
+    graf2 = px.histogram(
+        df_filtrado,
+        x="score",
+        nbins=20,
+        title="Distribuição das Notas dos Filmes",
+        labels={"score": "Nota", "count": "Frequência"}
+    )
+    st.plotly_chart(graf2, use_container_width=True)
+
+col_g3, col_g4 = st.columns(2)
+
+with col_g3:
+    contagem_idiomas = df_filtrado["orig_lang"].value_counts().head(10).reset_index()
+    contagem_idiomas.columns = ["Idioma Original", "Número de Filmes"]
+    graf3 = px.pie(
+        contagem_idiomas,
+        values="Número de Filmes",
+        names="Idioma Original",
+        title="Top 10 Idiomas Originais",
+        hole=0.3
+    )
+    st.plotly_chart(graf3, use_container_width=True)
+
+with col_g4:
     # Receita total por país
     revenue_country = df_filtrado.groupby("country")["revenue"].sum().reset_index()
     revenue_country.columns = ["country_raw", "Total Revenue"]
@@ -649,7 +688,7 @@ with tab3:
     if is_mostly_iso3:
         revenue_country["country_iso3"] = revenue_country["country_raw"].astype(str)
     else:
-        # tenta converter ISO2 -> ISO3 se pycountry estiver disponível
+        # Tenta converter ISO2 -> ISO3 se pycountry estiver disponível
         if HAS_PYCOUNTRY:
             def iso2_to_iso3(iso2):
                 try:
@@ -663,7 +702,7 @@ with tab3:
                     return None
             revenue_country["country_iso3"] = revenue_country["country_raw"].apply(iso2_to_iso3)
         else:
-            # sem pycountry e sem ISO3 -> não conseguimos criar o mapa
+            # Sem pycountry e sem ISO3 -> não conseguimos criar o mapa
             revenue_country["country_iso3"] = None
 
     revenue_country = revenue_country.dropna(subset=["country_iso3"])
