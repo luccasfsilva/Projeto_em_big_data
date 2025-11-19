@@ -12,7 +12,7 @@ warnings.filterwarnings('ignore')
 # CONFIGURAÇÃO DA PÁGINA
 # =========================
 st.set_page_config(
-    page_title="CineAnalytics Pro",
+    page_title="CineAnalytics ",
     page_icon="🎬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -560,7 +560,7 @@ df_filtrado["names"] = df_filtrado["names"].apply(traduzir_nome_filme)
 # =========================
 # CABEÇALHO
 # =========================
-st.markdown('<h1 class="main-header">🎬 CineAnalytics Pro</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">🎬 CineAnalytics</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">Dashboard Completo com Todas as Análises do Colab</p>', unsafe_allow_html=True)
 
 # =========================
