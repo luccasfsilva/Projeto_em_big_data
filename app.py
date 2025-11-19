@@ -1,6 +1,5 @@
 import pandas as pd
-import GoogleTranslator
-import time
+import streamlit as st
 
 # Criando o DataFrame com os dados fornecidos
 data = {
@@ -29,50 +28,47 @@ data = {
 
 df = pd.DataFrame(data)
 
-# Função para traduzir os títulos
-def traduzir_titulo(titulo):
-    try:
-        # Dicionário com traduções específicas para filmes conhecidos
-        traducoes_especificas = {
-            'Fast X': 'Velozes e Furiosos 10',
-            'The Little Mermaid': 'A Pequena Sereia',
-            'Transformers: Rise of the Beasts': 'Transformers: O Despertar das Feras',
-            'Spider-Man: Across the Spider-Verse': 'Homem-Aranha: Através do Aranhaverso',
-            'Guardians of the Galaxy Volume 3': 'Guardiões da Galáxia Volume 3',
-            'Extraction 2': 'Resgate 2',
-            'The Nun 2': 'A Freira 2'
-        }
-        
-        # Verifica se tem tradução específica
-        if titulo in traducoes_especificas:
-            return traducoes_especificas[titulo]
-        
-        # Para outros filmes, usa tradução automática
-        if titulo == 'Barbie' or titulo == 'The Flash':
-            return titulo  # Mantém original (já é usado no Brasil)
-        
-        # Tradução automática para os demais
-        translator = GoogleTranslator(source='en', target='pt')
-        traducao = translator.translate(titulo)
-        time.sleep(0.5)  # Delay para não sobrecarregar a API
-        return traducao
-        
-    except Exception as e:
-        print(f"Erro ao traduzir '{titulo}': {e}")
-        return titulo
+# Dicionário completo com traduções para português
+traducoes_filmes = {
+    'Fast X': 'Velozes e Furiosos 10',
+    'The Little Mermaid': 'A Pequena Sereia',
+    'Transformers: Rise of the Beasts': 'Transformers: O Despertar das Feras',
+    'Spider-Man: Across the Spider-Verse': 'Homem-Aranha: Através do Aranhaverso',
+    'Housewife Sex Slaves: Hatano Yui': 'Escravas Sexuais Donas de Casa: Hatano Yui',
+    'Barbie': 'Barbie',
+    'Guardians of the Galaxy Volume 3': 'Guardiões da Galáxia Volume 3',
+    'Extraction 2': 'Resgate 2',
+    'The Flash': 'The Flash',
+    'The Nun 2': 'A Freira 2'
+}
 
-# Aplicando a tradução na coluna Filme
-print("Traduzindo títulos...")
-df['Filme_Portugues'] = df['Filme'].apply(traduzir_titulo)
+# Função simples para traduzir baseada no dicionário
+def traduzir_filme(titulo_original):
+    return traducoes_filmes.get(titulo_original, titulo_original)
 
-# Reorganizando as colunas
-colunas = ['Filme', 'Filme_Portugues', 'Ano', 'Nota', 'Receita', 'Orçamento', 'ROI']
-df = df[colunas]
+# Aplicando a tradução
+df['Filme_Portugues'] = df['Filme'].apply(traduzir_filme)
 
-# Exibindo o resultado
-print("\nDataFrame com traduções:")
-print(df)
+# Interface Streamlit
+st.title("🎬 Tradução de Filmes para Português")
 
-# Opcional: Salvar em CSV
-df.to_csv('filmes_traduzidos.csv', index=False, encoding='utf-8-sig')
-print("\nArquivo 'filmes_traduzidos.csv' salvo com sucesso!")
+st.write("### DataFrame Original")
+st.dataframe(df[['Filme', 'Ano', 'Nota', 'Receita', 'Orçamento', 'ROI']])
+
+st.write("### DataFrame com Traduções")
+st.dataframe(df[['Filme_Portugues', 'Ano', 'Nota', 'Receita', 'Orçamento', 'ROI']])
+
+# Mostrar apenas as colunas traduzidas
+st.write("### Apenas os Filmes Traduzidos")
+st.dataframe(df[['Filme', 'Filme_Portugues']])
+
+# Download do CSV
+csv = df.to_csv(index=False, encoding='utf-8-sig')
+st.download_button(
+    label="📥 Baixar CSV com traduções",
+    data=csv,
+    file_name="filmes_traduzidos.csv",
+    mime="text/csv"
+)
+
+st.success("Traduções concluídas com sucesso!")
