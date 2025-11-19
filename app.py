@@ -71,7 +71,7 @@ st.markdown("""
 def carregar_dados():
     CSV_URL = "https://raw.githubusercontent.com/luccasfsilva/projetopy/main/imdb_movies.csv"
     try:
-        df = pd.read_csv(CSV_URL, parse_dates=['date_x'])
+        df = pd.read_csv(CSSV_URL, parse_dates=['date_x'])
         
         # Limpeza e transformação
         df["revenue"] = pd.to_numeric(df.get("revenue"), errors="coerce").fillna(0)
@@ -109,10 +109,116 @@ if df is None:
     st.stop()
 
 # =========================
-# TRADUÇÃO DOS FILMES (mantida do código anterior)
+# DICIONÁRIO DE TRADUÇÃO DOS FILMES
 # =========================
 TRADUCOES_FILMES = {
-    # ... (manter o mesmo dicionário de traduções)
+    # Filmes Populares
+    "Avatar: The Way of Water": "Avatar: O Caminho da Água",
+    "Avengers: Endgame": "Vingadores: Ultimato",
+    "Avatar": "Avatar",
+    "Titanic": "Titanic",
+    "Star Wars: Episode VII - The Force Awakens": "Star Wars: Episódio VII - O Despertar da Força",
+    "Avengers: Infinity War": "Vingadores: Guerra Infinita",
+    "Spider-Man: No Way Home": "Homem-Aranha: Sem Volta para Casa",
+    "Jurassic World": "Mundo Jurássico",
+    "The Lion King": "O Rei Leão",
+    "The Avengers": "Os Vingadores",
+    "Furious 7": "Velozes e Furiosos 7",
+    "Frozen II": "Frozen II",
+    "Top Gun: Maverick": "Top Gun: Maverick",
+    "Barbie": "Barbie",
+    "The Super Mario Bros. Movie": "Super Mario Bros.: O Filme",
+    "Avengers: Age of Ultron": "Vingadores: Era de Ultron",
+    "Black Panther": "Pantera Negra",
+    "Harry Potter and the Deathly Hallows: Part 2": "Harry Potter e as Relíquias da Morte: Parte 2",
+    "Star Wars: Episode VIII - The Last Jedi": "Star Wars: Episódio VIII - Os Últimos Jedi",
+    "Jurassic World: Fallen Kingdom": "Mundo Jurássico: Reino Ameaçado",
+    "Frozen": "Frozen: Uma Aventura Congelante",
+    "Beauty and the Beast": "A Bela e a Fera",
+    "Incredibles 2": "Os Incríveis 2",
+    "The Fate of the Furious": "O Destino de Velozes e Furiosos",
+    "Iron Man 3": "Homem de Ferro 3",
+    "Minions": "Minions",
+    "Captain America: Civil War": "Capitão América: Guerra Civil",
+    "Aquaman": "Aquaman",
+    "The Lord of the Rings: The Return of the King": "O Senhor dos Anéis: O Retorno do Rei",
+    "Spider-Man: Far From Home": "Homem-Aranha: Longe de Casa",
+    
+    # Filmes de Ação e Aventura
+    "Transformers: Dark of the Moon": "Transformers: O Lado Oculto da Lua",
+    "Skyfall": "007 - Operação Skyfall",
+    "Transformers: Age of Extinction": "Transformers: A Era da Extinção",
+    "The Dark Knight Rises": "Batman: O Cavaleiro das Trevas Ressurge",
+    "Toy Story 4": "Toy Story 4",
+    "Toy Story 3": "Toy Story 3",
+    "Pirates of the Caribbean: Dead Man's Chest": "Piratas do Caribe: O Baú da Morte",
+    "Rogue One: A Star Wars Story": "Rogue One: Uma História Star Wars",
+    "Pirates of the Caribbean: On Stranger Tides": "Piratas do Caribe: Navegando em Águas Misteriosas",
+    "Despicable Me 3": "Meu Malvado Favorito 3",
+    "Jumanji: Welcome to the Jungle": "Jumanji: Bem-vindo à Selva",
+    "Justice League": "Liga da Justiça",
+    "The Dark Knight": "Batman: O Cavaleiro das Trevas",
+    
+    # Filmes de Animação
+    "Finding Dory": "Procurando Dory",
+    "Zootopia": "Zootopia: Essa Cidade é o Bicho",
+    "Despicable Me 2": "Meu Malvado Favorito 2",
+    "The Grinch": "O Grinch",
+    "Finding Nemo": "Procurando Nemo",
+    "Shrek 2": "Shrek 2",
+    "The Secret Life of Pets": "A Vida Secreta dos Bichos",
+    "Inside Out": "Divertida Mente",
+    "The Incredibles": "Os Incríveis",
+    "Shrek the Third": "Shrek Terceiro",
+    "Shrek": "Shrek",
+    "Madagascar 3: Europe's Most Wanted": "Madagascar 3: Os Procurados",
+    "Monsters, Inc.": "Monstros S.A.",
+    "Up": "Up: Altas Aventuras",
+    "Spider-Man: Into the Spider-Verse": "Homem-Aranha no Aranhaverso",
+    
+    # Filmes Recentes
+    "Oppenheimer": "Oppenheimer",
+    "Guardians of the Galaxy Vol. 3": "Guardiões da Galáxia Vol. 3",
+    "Fast X": "Velozes e Furiosos 10",
+    "The Little Mermaid": "A Pequena Sereia",
+    "Elemental": "Elementos",
+    "Ant-Man and the Wasp: Quantumania": "Homem-Formiga e a Vespa: Quantumania",
+    "John Wick: Chapter 4": "John Wick 4: Baba Yaga",
+    "The Flash": "The Flash",
+    "Transformers: Rise of the Beasts": "Transformers: O Despertar das Feras",
+    "Spider-Man: Across the Spider-Verse": "Homem-Aranha: Através do Aranhaverso",
+    "Indiana Jones and the Dial of Destiny": "Indiana Jones e o Chamado do Destino",
+    "Mission: Impossible - Dead Reckoning Part One": "Missão: Impossível - Acerto de Contas Parte Um",
+    "The Marvels": "As Marvels",
+    "Wonka": "Wonka",
+    "Aquaman and the Lost Kingdom": "Aquaman e o Reino Perdido",
+    "The Hunger Games: The Ballad of Songbirds & Snakes": "Jogos Vorazes: A Cantiga dos Pássaros e das Serpentes",
+    
+    # Filmes Diversos
+    "The Lord of the Rings: The Two Towers": "O Senhor dos Anéis: As Duas Torres",
+    "The Lord of the Rings: The Fellowship of the Ring": "O Senhor dos Anéis: A Sociedade do Anel",
+    "The Matrix Reloaded": "Matrix Reloaded",
+    "The Twilight Saga: Breaking Dawn - Part 2": "A Saga Crepúsculo: Amanhecer - Parte 2",
+    "The Twilight Saga: New Moon": "A Saga Crepúsculo: Lua Nova",
+    "The Twilight Saga: Eclipse": "A Saga Crepúsculo: Eclipse",
+    "The Twilight Saga: Breaking Dawn - Part 1": "A Saga Crepúsculo: Amanhecer - Parte 1",
+    "The Hobbit: An Unexpected Journey": "O Hobbit: Uma Jornada Inesperada",
+    "The Hobbit: The Desolation of Smaug": "O Hobbit: A Desolação de Smaug",
+    "The Hobbit: The Battle of the Five Armies": "O Hobbit: A Batalha dos Cinco Exércitos",
+    "The Da Vinci Code": "O Código Da Vinci",
+    "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe": "As Crônicas de Nárnia: O Leão, a Feiticeira e o Guarda-Roupa",
+    "The Passion of the Christ": "A Paixão de Cristo",
+    "The Exorcist": "O Exorcista",
+    "The Sound of Music": "A Noviça Rebelde",
+    "The Sting": "Um Golpe de Mestre",
+    "Butch Cassidy and the Sundance Kid": "Butch Cassidy e o Menino da Lua",
+    
+    # Filmes em Português (manter como estão)
+    "Cidade de Deus": "Cidade de Deus",
+    "Tropa de Elite": "Tropa de Elite",
+    "Central do Brasil": "Central do Brasil",
+    "O Auto da Compadecida": "O Auto da Compadecida",
+    "Lisbela e o Prisioneiro": "Lisbela e o Prisioneiro",
 }
 
 def traduzir_nome_filme(nome_original):
@@ -121,7 +227,7 @@ def traduzir_nome_filme(nome_original):
     return TRADUCOES_FILMES.get(nome_original, nome_original)
 
 # =========================
-# FUNÇÕES DE ANÁLISE DO COLAB
+# FUNÇÕES DE ANÁLISE DO COLAB (CORRIGIDAS)
 # =========================
 def criar_grafico_top_filmes(df, top_n=10):
     """Top filmes por receita - Gráfico 1 do Colab"""
@@ -149,7 +255,7 @@ def criar_grafico_top_filmes(df, top_n=10):
     return fig
 
 def criar_grafico_dispercao_nota_receita(df):
-    """Relação entre nota e receita - Gráfico 2 do Colab"""
+    """Relação entre nota e receita - Gráfico 2 do Colab (CORRIGIDO)"""
     fig = px.scatter(
         df,
         x='score',
@@ -157,7 +263,7 @@ def criar_grafico_dispercao_nota_receita(df):
         title='🎯 Relação entre Nota e Receita',
         labels={'score': 'Nota IMDb', 'revenue': 'Receita (USD)'},
         hover_data=['names'],
-        trendline='lowess',
+        # Removido trendline='lowess' que causava o erro
         color_discrete_sequence=['#FF6B6B']
     )
     fig.update_layout(
@@ -251,22 +357,24 @@ def criar_grafico_media_notas_ano(df):
 def criar_grafico_correlacao(df):
     """Mapa de calor de correlações - Gráfico 7 do Colab"""
     numeric_cols = df.select_dtypes(include=[np.number]).columns
-    corr_matrix = df[numeric_cols].corr()
-    
-    fig = px.imshow(
-        corr_matrix,
-        title='🔥 Mapa de Calor de Correlações',
-        color_continuous_scale='RdBu_r',
-        aspect='auto',
-        text_auto=True
-    )
-    fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white'),
-        height=500
-    )
-    return fig
+    if len(numeric_cols) > 1:
+        corr_matrix = df[numeric_cols].corr()
+        
+        fig = px.imshow(
+            corr_matrix,
+            title='🔥 Mapa de Calor de Correlações',
+            color_continuous_scale='RdBu_r',
+            aspect='auto',
+            text_auto=True
+        )
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white'),
+            height=500
+        )
+        return fig
+    return None
 
 def criar_grafico_decadas(df):
     """Análise por décadas - Gráfico 8 do Colab"""
@@ -287,7 +395,7 @@ def criar_grafico_decadas(df):
     ))
     fig.add_trace(go.Scatter(
         x=decada_stats['decada'],
-        y=decada_stats['revenue'] / decada_stats['revenue'].max() * decada_stats['names'].max(),
+        y=decada_stats['revenue'] / max(decada_stats['revenue'].max(), 1) * decada_stats['names'].max(),
         name='Receita Média (escala ajustada)',
         line=dict(color='#FF6B6B', width=3),
         yaxis='y2'
@@ -353,23 +461,26 @@ def criar_grafico_sazonalidade(df):
     return None
 
 def criar_grafico_orcamento_vs_receita(df):
-    """Relação orçamento vs receita - Gráfico adicional do Colab"""
-    fig = px.scatter(
-        df[df['budget_x'] > 0],
-        x='budget_x',
-        y='revenue',
-        title='💰 Relação entre Orçamento e Receita',
-        labels={'budget_x': 'Orçamento (USD)', 'revenue': 'Receita (USD)'},
-        trendline='lowess',
-        hover_data=['names', 'score'],
-        color_discrete_sequence=['#FFA726']
-    )
-    fig.update_layout(
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='white')
-    )
-    return fig
+    """Relação orçamento vs receita - Gráfico adicional do Colab (CORRIGIDO)"""
+    df_filtrado = df[df['budget_x'] > 0]
+    if len(df_filtrado) > 0:
+        fig = px.scatter(
+            df_filtrado,
+            x='budget_x',
+            y='revenue',
+            title='💰 Relação entre Orçamento e Receita',
+            labels={'budget_x': 'Orçamento (USD)', 'revenue': 'Receita (USD)'},
+            # Removido trendline que causava erro
+            hover_data=['names', 'score'],
+            color_discrete_sequence=['#FFA726']
+        )
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white')
+        )
+        return fig
+    return None
 
 def criar_grafico_distribuicao_notas(df):
     """Distribuição de notas - Gráfico adicional do Colab"""
@@ -512,16 +623,25 @@ with tab3:
     with col1:
         st.markdown("#### Nota vs Receita")
         fig_dispersao = criar_grafico_dispercao_nota_receita(df_filtrado)
-        st.plotly_chart(fig_dispersao, use_container_width=True)
+        if fig_dispersao:
+            st.plotly_chart(fig_dispersao, use_container_width=True)
+        else:
+            st.info("Não há dados suficientes para este gráfico")
     
     with col2:
         st.markdown("#### Orçamento vs Receita")
         fig_orcamento_receita = criar_grafico_orcamento_vs_receita(df_filtrado)
-        st.plotly_chart(fig_orcamento_receita, use_container_width=True)
+        if fig_orcamento_receita:
+            st.plotly_chart(fig_orcamento_receita, use_container_width=True)
+        else:
+            st.info("Não há dados de orçamento suficientes")
     
     st.markdown("#### Mapa de Correlações")
     fig_correlacao = criar_grafico_correlacao(df_filtrado)
-    st.plotly_chart(fig_correlacao, use_container_width=True)
+    if fig_correlacao:
+        st.plotly_chart(fig_correlacao, use_container_width=True)
+    else:
+        st.info("Não há dados numéricos suficientes para correlação")
 
 with tab4:
     st.markdown('<div class="section-header">🌎 Distribuições e Categorias</div>', unsafe_allow_html=True)
@@ -536,18 +656,21 @@ with tab4:
     with col2:
         st.markdown("#### Categorias de Sucesso")
         success_dist = df_filtrado['success_category'].value_counts()
-        fig_success = px.pie(
-            values=success_dist.values,
-            names=success_dist.index,
-            title="Distribuição por Categoria de Sucesso",
-            color_discrete_sequence=px.colors.qualitative.Set3
-        )
-        fig_success.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white')
-        )
-        st.plotly_chart(fig_success, use_container_width=True)
+        if len(success_dist) > 0:
+            fig_success = px.pie(
+                values=success_dist.values,
+                names=success_dist.index,
+                title="Distribuição por Categoria de Sucesso",
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            fig_success.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white')
+            )
+            st.plotly_chart(fig_success, use_container_width=True)
+        else:
+            st.info("Não há dados para categorias de sucesso")
 
 with tab5:
     st.markdown('<div class="section-header">📊 Análise Financeira Detalhada</div>', unsafe_allow_html=True)
@@ -560,12 +683,14 @@ with tab5:
             receita_total = df_filtrado["revenue"].sum()
             receita_media = df_filtrado["revenue"].mean()
             roi_medio = df_filtrado["roi"].mean()
-            orcamento_medio = df_filtrado["budget_x"].mean()
+            orcamento_medio = df_filtrado[df_filtrado["budget_x"] > 0]["budget_x"].mean()
             
             st.metric("💰 Receita Total", f"${receita_total:,.0f}")
             st.metric("📊 Receita Média", f"${receita_media:,.0f}")
             st.metric("📈 ROI Médio", f"{roi_medio:.1f}%")
-            st.metric("💸 Orçamento Médio", f"${orcamento_medio:,.0f}" if orcamento_medio > 0 else "N/A")
+            st.metric("💸 Orçamento Médio", f"${orcamento_medio:,.0f}" if not pd.isna(orcamento_medio) else "N/A")
+        else:
+            st.info("Não há dados financeiros disponíveis")
     
     with col2:
         st.markdown("#### Top Filmes por ROI")
@@ -589,6 +714,8 @@ with tab5:
                 height=400
             )
             st.plotly_chart(fig_roi, use_container_width=True)
+        else:
+            st.info("Não há dados de ROI disponíveis")
 
 with tab6:
     st.markdown('<div class="section-header">📅 Análise de Sazonalidade</div>', unsafe_allow_html=True)
@@ -608,40 +735,42 @@ with tab6:
                               'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dec']
             receita_mensal = df_filtrado.groupby('mes')['revenue'].mean().reset_index()
             
-            fig_mensal = px.bar(
-                receita_mensal,
-                x=receita_mensal['mes'].apply(lambda x: meses_ordenados[x-1]),
-                y='revenue',
-                title='💰 Receita Média por Mês',
-                labels={'x': 'Mês', 'revenue': 'Receita Média'},
-                color='revenue',
-                color_continuous_scale='blues'
-            )
-            fig_mensal.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white')
-            )
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            if len(receita_mensal) > 0:
+                fig_mensal = px.bar(
+                    receita_mensal,
+                    x=receita_mensal['mes'].apply(lambda x: meses_ordenados[x-1]),
+                    y='revenue',
+                    title='💰 Receita Média por Mês',
+                    labels={'x': 'Mês', 'revenue': 'Receita Média'},
+                    color='revenue',
+                    color_continuous_scale='blues'
+                )
+                fig_mensal.update_layout(
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='white')
+                )
+                st.plotly_chart(fig_mensal, use_container_width=True)
         
         with col2:
             filmes_mensal = df_filtrado.groupby('mes').size().reset_index(name='count')
             
-            fig_count_mensal = px.bar(
-                filmes_mensal,
-                x=filmes_mensal['mes'].apply(lambda x: meses_ordenados[x-1]),
-                y='count',
-                title='🎬 Número de Filmes por Mês',
-                labels={'x': 'Mês', 'count': 'Número de Filmes'},
-                color='count',
-                color_continuous_scale='greens'
-            )
-            fig_count_mensal.update_layout(
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white')
-            )
-            st.plotly_chart(fig_count_mensal, use_container_width=True)
+            if len(filmes_mensal) > 0:
+                fig_count_mensal = px.bar(
+                    filmes_mensal,
+                    x=filmes_mensal['mes'].apply(lambda x: meses_ordenados[x-1]),
+                    y='count',
+                    title='🎬 Número de Filmes por Mês',
+                    labels={'x': 'Mês', 'count': 'Número de Filmes'},
+                    color='count',
+                    color_continuous_scale='greens'
+                )
+                fig_count_mensal.update_layout(
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='white')
+                )
+                st.plotly_chart(fig_count_mensal, use_container_width=True)
 
 with tab7:
     st.markdown('<div class="section-header">🔍 Base de Dados Completa</div>', unsafe_allow_html=True)
