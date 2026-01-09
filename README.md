@@ -1,4 +1,4 @@
-# 🎬 CineAnalytics Pro
+# 🎬 CineAnalytics 
 
 Dashboard interativo e moderno para análise de dados de filmes com visualizações dinâmicas em tempo real.
 
